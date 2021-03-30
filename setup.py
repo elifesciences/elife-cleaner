@@ -2,13 +2,14 @@ from setuptools import setup
 
 import elifecleaner
 
-with open('README.rst') as fp:
+with open("README.md") as fp:
     readme = fp.read()
 
 setup(name='elifecleaner',
     version=elifecleaner.__version__,
     description='Clean and transform article submission files into a consistent format.',
     long_description=readme,
+    long_description_content_type="text/markdown",
     packages=['elifecleaner'],
     license = 'MIT',
     install_requires=[
