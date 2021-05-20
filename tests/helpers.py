@@ -3,11 +3,11 @@ import os
 import importlib
 
 
-def delete_files_in_folder(folder, filter_out=[]):
+def delete_files_in_folder(folder, filter_out=None):
     file_list = os.listdir(folder)
     for file_name in file_list:
         file_path = os.path.join(folder, file_name)
-        if file_name in filter_out:
+        if filter_out and file_name in filter_out:
             continue
         elif os.path.isdir(file_path):
             # call recursively to delete file and folders inside a folder
