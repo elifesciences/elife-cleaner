@@ -1,15 +1,20 @@
 import re
 from collections import OrderedDict
 from xml.etree import ElementTree
-from elifecleaner import zip_lib
+from wand.image import Image
+from elifecleaner import LOGGER, zip_lib
 
 
 def check_ejp_zip(zip_file, tmp_dir):
+    "check contents of ejp zip file"
     asset_file_name_map = zip_lib.unzip_zip(zip_file, tmp_dir)
     xml_asset = article_xml_asset(asset_file_name_map)
     root = parse_article_xml(xml_asset[1])
     files = file_list(root)
-    # todo!!!
+    figures = figure_list(files, asset_file_name_map)
+    # check for multiple page PDF figures
+    for pdf in [pdf for pdf in figures if pdf.get("pages") and pdf.get("pages") > 1]:
+        LOGGER.warning("multiple page PDF figure file: %s", pdf.get("file_name"))
     return True
 
 
@@ -78,3 +83,38 @@ def file_list(root):
                 file_detail["custom_meta"].append(custom_meta)
         file_list.append(file_detail)
     return file_list
+
+
+def figure_list(files, asset_file_name_map):
+    figures = []
+
+    figure_files = [
+        file_data for file_data in files if file_data.get("file_type") == "figure"
+    ]
+
+    for file_data in figure_files:
+        figure_detail = OrderedDict()
+        figure_detail["upload_file_nm"] = file_data.get("upload_file_nm")
+        figure_detail["extension"] = file_extension(file_data.get("upload_file_nm"))
+        # collect file name data
+        for asset_file_name in asset_file_name_map.items():
+            if asset_file_name[1].endswith(file_data.get("upload_file_nm")):
+                figure_detail["file_name"] = asset_file_name[0]
+                figure_detail["file_path"] = asset_file_name[1]
+                break
+        if figure_detail["extension"] == "pdf":
+            figure_detail["pages"] = pdf_page_count(figure_detail.get("file_path"))
+        figures.append(figure_detail)
+    return figures
+
+
+def file_extension(file_name):
+    return file_name.split(".")[-1].lower() if file_name and "." in file_name else None
+
+
+def pdf_page_count(file_path):
+    "open PDF as an image and count the number of pages"
+    if file_path:
+        with Image(filename=file_path) as img:
+            return len(img.sequence)
+    return None
