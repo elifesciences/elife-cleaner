@@ -2,6 +2,7 @@ import re
 from collections import OrderedDict
 from xml.etree import ElementTree
 from wand.image import Image
+from wand.exceptions import PolicyError, WandRuntimeError
 from elifecleaner import LOGGER, zip_lib
 
 
@@ -115,6 +116,19 @@ def file_extension(file_name):
 def pdf_page_count(file_path):
     "open PDF as an image and count the number of pages"
     if file_path:
-        with Image(filename=file_path) as img:
-            return len(img.sequence)
+        try:
+            with Image(filename=file_path) as img:
+                return len(img.sequence)
+        except WandRuntimeError:
+            LOGGER.exception(
+                "WandRuntimeError in pdf_page_count(), "
+                "imagemagick may not be installed"
+            )
+            raise
+        except PolicyError:
+            LOGGER.exception(
+                "PolicyError in pdf_page_count(), "
+                "imagemagick policy.xml may not allow reading PDF files"
+            )
+            raise
     return None

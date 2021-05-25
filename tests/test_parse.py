@@ -1,6 +1,8 @@
 import os
 import unittest
+from mock import patch
 from xml.etree import ElementTree
+import wand
 from elifecleaner import configure_logging, parse, zip_lib
 from tests.helpers import delete_files_in_folder, read_fixture
 
@@ -73,3 +75,40 @@ class TestParse(unittest.TestCase):
 
     def test_pdf_page_count_blank(self):
         self.assertIsNone(parse.pdf_page_count(""))
+
+    @patch.object(wand.image.Image, "allocate")
+    def test_pdf_page_count_wand_runtime_error(self, mock_image_allocate):
+        mock_image_allocate.side_effect = wand.exceptions.WandRuntimeError()
+        zip_lib.unzip_zip(
+            "tests/test_data/30-01-2019-RA-eLife-45644.zip", self.temp_dir
+        )
+        pdf_path = "tests/tmp/30-01-2019-RA-eLife-45644/Appendix 1figure 10.pdf"
+        with self.assertRaises(wand.exceptions.WandRuntimeError):
+            self.assertIsNone(parse.pdf_page_count(pdf_path))
+        with open(self.log_file, "r") as open_file:
+            self.assertEqual(
+                open_file.readline(),
+                (
+                    "ERROR elifecleaner:parse:pdf_page_count: "
+                    "WandRuntimeError in pdf_page_count(), imagemagick may not be installed\n"
+                ),
+            )
+
+    @patch.object(wand.image.Image, "allocate")
+    def test_pdf_page_count_wand_policy_error(self, mock_image_allocate):
+        mock_image_allocate.side_effect = wand.exceptions.PolicyError()
+        zip_lib.unzip_zip(
+            "tests/test_data/30-01-2019-RA-eLife-45644.zip", self.temp_dir
+        )
+        pdf_path = "tests/tmp/30-01-2019-RA-eLife-45644/Appendix 1figure 10.pdf"
+        with self.assertRaises(wand.exceptions.PolicyError):
+            self.assertIsNone(parse.pdf_page_count(pdf_path))
+        with open(self.log_file, "r") as open_file:
+            self.assertEqual(
+                open_file.readline(),
+                (
+                    "ERROR elifecleaner:parse:pdf_page_count: "
+                    "PolicyError in pdf_page_count(), "
+                    "imagemagick policy.xml may not allow reading PDF files\n"
+                ),
+            )
