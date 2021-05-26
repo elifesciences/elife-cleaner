@@ -13,7 +13,7 @@ setup(
     long_description_content_type="text/markdown",
     packages=["elifecleaner"],
     license="MIT",
-    install_requires=["wand"],
+    install_requires=["wand >= 0.5.2"],
     url="https://github.com/elifesciences/elife-cleaner",
     maintainer="eLife Sciences Publications Ltd.",
     maintainer_email="tech-team@elifesciences.org",
