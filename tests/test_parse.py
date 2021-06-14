@@ -43,20 +43,6 @@ class TestParse(unittest.TestCase):
         xml_asset = parse.article_xml_asset(asset_file_name_map)
         self.assertEqual(xml_asset, expected)
 
-    def test_parse_article_xml(self):
-        xml_file_path = os.path.join(self.temp_dir, "test.xml")
-        with open(xml_file_path, "w") as open_file:
-            open_file.write("<article/>")
-        root = parse.parse_article_xml(xml_file_path)
-        self.assertIsNotNone(root)
-
-    def test_parse_article_xml_failure(self):
-        xml_file_path = os.path.join(self.temp_dir, "test.xml")
-        with open(xml_file_path, "w") as open_file:
-            open_file.write("malformed xml")
-        with self.assertRaises(ElementTree.ParseError):
-            parse.parse_article_xml(xml_file_path)
-
     def test_file_list(self):
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
         asset_file_name_map = zip_lib.unzip_zip(zip_file, self.temp_dir)
@@ -112,6 +98,35 @@ class TestParse(unittest.TestCase):
                     "imagemagick policy.xml may not allow reading PDF files\n"
                 ),
             )
+
+
+class TestParseArticleXML(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+
+    def tearDown(self):
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_parse_article_xml(self):
+        xml_file_path = os.path.join(self.temp_dir, "test.xml")
+        with open(xml_file_path, "w") as open_file:
+            open_file.write("<article/>")
+        root = parse.parse_article_xml(xml_file_path)
+        self.assertIsNotNone(root)
+
+    def test_parse_article_xml_entities(self):
+        xml_file_path = os.path.join(self.temp_dir, "test.xml")
+        with open(xml_file_path, "w") as open_file:
+            open_file.write("<article>&mdash;</article>")
+        root = parse.parse_article_xml(xml_file_path)
+        self.assertIsNotNone(root)
+
+    def test_parse_article_xml_failure(self):
+        xml_file_path = os.path.join(self.temp_dir, "test.xml")
+        with open(xml_file_path, "w") as open_file:
+            open_file.write("malformed xml")
+        with self.assertRaises(ElementTree.ParseError):
+            parse.parse_article_xml(xml_file_path)
 
 
 class TestRepairArticleXml(unittest.TestCase):
