@@ -40,14 +40,18 @@ def parse_article_xml(xml_file):
             return ElementTree.fromstring(xml_string)
         except ElementTree.ParseError:
             # try to repair the xml namespaces
-            xml_string = xml_string.replace(
-                '<article article-type="research-article">',
-                (
-                    '<article article-type="research-article" '
-                    'xmlns:xlink="http://www.w3.org/1999/xlink">'
-                ),
-            )
+            xml_string = repair_article_xml(xml_string)
             return ElementTree.fromstring(xml_string)
+
+
+def repair_article_xml(xml_string):
+    if 'xmlns:xlink="http://www.w3.org/1999/xlink"' not in xml_string:
+        return re.sub(
+            r"<article(.*?)>",
+            r'<article\1 xmlns:xlink="http://www.w3.org/1999/xlink">',
+            xml_string,
+        )
+    return xml_string
 
 
 def file_list(root):

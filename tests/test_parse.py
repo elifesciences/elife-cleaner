@@ -112,3 +112,36 @@ class TestParse(unittest.TestCase):
                     "imagemagick policy.xml may not allow reading PDF files\n"
                 ),
             )
+
+
+class TestRepairArticleXml(unittest.TestCase):
+    def test_malformed_xml(self):
+        xml_string = "malformed xml"
+        expected = "malformed xml"
+        self.assertEqual(parse.repair_article_xml(xml_string), expected)
+
+    def test_research_article(self):
+        xml_string = '<article article-type="research-article"></article>'
+        expected = (
+            '<article article-type="research-article" '
+            'xmlns:xlink="http://www.w3.org/1999/xlink"></article>'
+        )
+        self.assertEqual(parse.repair_article_xml(xml_string), expected)
+
+    def test_article_commentary(self):
+        xml_string = '<article article-type="article-commentary"></article>'
+        expected = (
+            '<article article-type="article-commentary" '
+            'xmlns:xlink="http://www.w3.org/1999/xlink"></article>'
+        )
+        self.assertEqual(parse.repair_article_xml(xml_string), expected)
+
+    def test_article_tag(self):
+        xml_string = "<article></article>"
+        expected = '<article xmlns:xlink="http://www.w3.org/1999/xlink"></article>'
+        self.assertEqual(parse.repair_article_xml(xml_string), expected)
+
+    def test_xlink_namespace_already_exists(self):
+        xml_string = '<article xmlns:xlink="http://www.w3.org/1999/xlink"></article>'
+        expected = '<article xmlns:xlink="http://www.w3.org/1999/xlink"></article>'
+        self.assertEqual(parse.repair_article_xml(xml_string), expected)
