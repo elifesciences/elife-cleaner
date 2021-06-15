@@ -38,13 +38,35 @@ def parse_article_xml(xml_file):
     with open(xml_file, "r") as open_file:
         xml_string = open_file.read()
         # unescape any HTML entities to avoid undefined entity XML exceptions later
-        xml_string = html.unescape(xml_string)
+        xml_string = html_entity_unescape(xml_string)
         try:
             return ElementTree.fromstring(xml_string)
         except ElementTree.ParseError:
             # try to repair the xml namespaces
             xml_string = repair_article_xml(xml_string)
             return ElementTree.fromstring(xml_string)
+
+
+def replace_entity(match):
+    "function to use in re.sub for HTMTL entity replacements"
+    entity_name = match.group(1)
+    ignore_entities = [
+        "amp",
+        "lt",
+        "gt",
+    ]
+    if entity_name in html.entities.entitydefs and entity_name not in ignore_entities:
+        return html.entities.entitydefs[entity_name]
+    else:
+        return "&%s;" % entity_name
+
+
+def html_entity_unescape(xml_string):
+    "convert HTML entities to unicode characters, except the XML special characters"
+    if "&" not in xml_string:
+        return xml_string
+    match_pattern = re.compile(r"&([^\t\n\f <&#;]{1,32}?);")
+    return match_pattern.sub(replace_entity, xml_string)
 
 
 def repair_article_xml(xml_string):
