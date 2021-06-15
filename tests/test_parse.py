@@ -117,8 +117,8 @@ class TestParseArticleXML(unittest.TestCase):
     def test_parse_article_xml_entities(self):
         xml_file_path = os.path.join(self.temp_dir, "test.xml")
         with open(xml_file_path, "w") as open_file:
-            open_file.write("<article>&mdash;</article>")
-        expected = b"<article>&#8212;</article>"
+            open_file.write("<article>&mdash;&lt;&gt;&amp;&quot;&beta;</article>")
+        expected = b'<article>&#8212;&lt;&gt;&amp;"&#946;</article>'
         root = parse.parse_article_xml(xml_file_path)
         self.assertIsNotNone(root)
         self.assertEqual(ElementTree.tostring(root), expected)
