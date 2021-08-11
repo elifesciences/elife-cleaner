@@ -17,7 +17,24 @@ def check_ejp_zip(zip_file, tmp_dir):
     # check for multiple page PDF figures
     for pdf in [pdf for pdf in figures if pdf.get("pages") and pdf.get("pages") > 1]:
         LOGGER.warning("multiple page PDF figure file: %s", pdf.get("file_name"))
+    # check for missing files
+    missing_files = find_missing_files(files, asset_file_name_map)
+    for missing_file in missing_files:
+        LOGGER.warning("zip does not contain a file in the manifest: %s" % missing_file)
+
     return True
+
+
+def find_missing_files(files, asset_file_name_map):
+    "for each file name from the manifest XML file, check for missing files in the zip contents"
+    missing_files = []
+    asset_file_name_keys = [
+        asset_file_key.split("/")[-1] for asset_file_key in asset_file_name_map
+    ]
+    for manifest_file in files:
+        if manifest_file.get("upload_file_nm") not in asset_file_name_keys:
+            missing_files.append(manifest_file.get("upload_file_nm"))
+    return missing_files
 
 
 def article_xml_asset(asset_file_name_map):

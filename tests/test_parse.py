@@ -1,7 +1,9 @@
 import os
 import unittest
-from mock import patch
+import zipfile
+from collections import OrderedDict
 from xml.etree import ElementTree
+from mock import patch
 import wand
 from elifecleaner import configure_logging, parse, zip_lib
 from tests.helpers import delete_files_in_folder, read_fixture
@@ -26,6 +28,35 @@ class TestParse(unittest.TestCase):
             "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 11.pdf\n" % warning_prefix,
         ]
         result = parse.check_ejp_zip(zip_file, self.temp_dir)
+        self.assertTrue(result)
+        log_file_lines = []
+        with open(self.log_file, "r") as open_file:
+            for line in open_file:
+                log_file_lines.append(line)
+        self.assertEqual(log_file_lines, expected)
+
+    def test_check_ejp_zip_missing_file(self):
+        zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
+        # remove a file from a copy of the zip file for testing
+        test_zip_file_name = os.path.join(self.temp_dir, "test_missing_file.zip")
+
+        remove_files = ["08-11-2020-FA-eLife-64719/eLife64719_figure2_classB.png"]
+        with zipfile.ZipFile(zip_file, "r") as input_zipfile:
+            with zipfile.ZipFile(test_zip_file_name, "w") as output_zipfile:
+                for zip_info in input_zipfile.infolist():
+                    if zip_info.filename not in remove_files:
+                        output_zipfile.writestr(
+                            zip_info, input_zipfile.read(zip_info.filename)
+                        )
+
+        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip:"
+        missing_file_prefix = "zip does not contain a file in the manifest:"
+        expected = [
+            "%s %s eLife64719_figure2_classB.png\n"
+            % (warning_prefix, missing_file_prefix),
+        ]
+
+        result = parse.check_ejp_zip(test_zip_file_name, self.temp_dir)
         self.assertTrue(result)
         log_file_lines = []
         with open(self.log_file, "r") as open_file:
@@ -162,3 +193,36 @@ class TestRepairArticleXml(unittest.TestCase):
         xml_string = '<article xmlns:xlink="http://www.w3.org/1999/xlink"></article>'
         expected = '<article xmlns:xlink="http://www.w3.org/1999/xlink"></article>'
         self.assertEqual(parse.repair_article_xml(xml_string), expected)
+
+
+class TestFindMissingFiles(unittest.TestCase):
+    def test_find_missing_files_complete(self):
+        files = []
+        asset_file_name_map = []
+        expected = []
+        self.assertEqual(parse.find_missing_files(files, asset_file_name_map), expected)
+
+    def test_find_missing_files_incomplete(self):
+        files = [
+            OrderedDict(
+                [
+                    ("file_type", "figure"),
+                    ("id", "2063134"),
+                    ("upload_file_nm", "eLife64719_figure1_classB.png"),
+                    (
+                        "custom_meta",
+                        [
+                            OrderedDict(
+                                [
+                                    ("meta_name", "Figure number"),
+                                    ("meta_value", "Figure 1"),
+                                ]
+                            )
+                        ],
+                    ),
+                ]
+            )
+        ]
+        asset_file_name_map = []
+        expected = ["eLife64719_figure1_classB.png"]
+        self.assertEqual(parse.find_missing_files(files, asset_file_name_map), expected)
