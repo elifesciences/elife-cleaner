@@ -21,6 +21,10 @@ def check_ejp_zip(zip_file, tmp_dir):
     missing_files = find_missing_files(files, asset_file_name_map)
     for missing_file in missing_files:
         LOGGER.warning("zip does not contain a file in the manifest: %s" % missing_file)
+    # check for file not listed in the manifest
+    extra_files = find_extra_files(files, asset_file_name_map)
+    for extra_file in extra_files:
+        LOGGER.warning("file not listed in the manifest: %s" % extra_file)
 
     return True
 
@@ -37,11 +41,41 @@ def find_missing_files(files, asset_file_name_map):
     return missing_files
 
 
+def find_extra_files(files, asset_file_name_map):
+    "check if any file names are missing from the manifest XML"
+    extra_files = []
+
+    asset_file_name_keys = [
+        asset_file_key.split("/")[-1] for asset_file_key in asset_file_name_map
+    ]
+    manifest_file_names = [
+        manifest_file.get("upload_file_nm")
+        for manifest_file in files
+        if manifest_file.get("upload_file_nm")
+    ]
+
+    # get the name of the article XML file for later
+    xml_asset_file_name = None
+    xml_asset = article_xml_asset(asset_file_name_map)
+    if xml_asset:
+        xml_asset_file_name = xml_asset[0].split("/")[-1]
+
+    for file_name in asset_file_name_keys:
+        # skip checking for the XML file which is not listed in the manifest
+        if file_name == xml_asset_file_name:
+            continue
+        if file_name not in manifest_file_names:
+            extra_files.append(file_name)
+    return extra_files
+
+
 def article_xml_asset(asset_file_name_map):
     """
     find the article XML file name,
     e.g. 30-01-2019-RA-eLife-45644/30-01-2019-RA-eLife-45644.xml
     """
+    if not asset_file_name_map:
+        return None
     xml_asset = None
     match_pattern = re.compile(r"^(.*)/\1.xml$")
     for asset in asset_file_name_map.items():
