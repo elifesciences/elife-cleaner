@@ -116,6 +116,12 @@ class TestParse(unittest.TestCase):
         xml_asset = parse.article_xml_asset(asset_file_name_map)
         self.assertEqual(xml_asset, expected)
 
+    def test_article_xml_name_empty(self):
+        asset_file_name_map = []
+        expected = None
+        xml_asset = parse.article_xml_asset(asset_file_name_map)
+        self.assertEqual(xml_asset, expected)
+
     def test_file_list(self):
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
         asset_file_name_map = zip_lib.unzip_zip(zip_file, self.temp_dir)
