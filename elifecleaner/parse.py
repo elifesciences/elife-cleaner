@@ -25,6 +25,10 @@ def check_ejp_zip(zip_file, tmp_dir):
     extra_files = find_extra_files(files, asset_file_name_map)
     for extra_file in extra_files:
         LOGGER.warning("file not listed in the manifest: %s" % extra_file)
+    # check for out of sequence files by name
+    missing_files_by_name = find_missing_files_by_name(files)
+    for missing_file in missing_files_by_name:
+        LOGGER.warning("file misisng from expected numeric sequence: %s" % missing_file)
 
     return True
 
@@ -67,6 +71,91 @@ def find_extra_files(files, asset_file_name_map):
         if file_name not in manifest_file_names:
             extra_files.append(file_name)
     return extra_files
+
+
+def find_missing_files_by_name(files):
+    """
+    In the manifest file names look for any missing from the expected numeric sequence
+    For example, if there is only Figure 1 and Figure 3, Figure 2 is consider to be missing
+    """
+    missing_files = []
+    match_rules = [
+        {
+            "file_types": ["figure"],
+            "meta_names": ["Title", "Figure number"],
+            "match_pattern": r"Figure (\d+)",
+        }
+    ]
+    for match_rule in match_rules:
+
+        # collect file values
+        file_detail_values = find_file_detail_values(
+            files,
+            match_rule.get("file_types"),
+            match_rule.get("meta_names"),
+        )
+        meta_values = [file_detail[1] for file_detail in file_detail_values]
+
+        missing_files += find_missing_value_by_sequence(
+            meta_values, match_rule.get("match_pattern")
+        )
+    return missing_files
+
+
+def find_file_detail_values(files, file_types, meta_names):
+    file_detail_values = []
+    file_types = list(file_types)
+    for file_data in files:
+        if file_data.get("file_type") in file_types and file_data.get("custom_meta"):
+            for custom_meta in file_data.get("custom_meta"):
+                if (
+                    custom_meta.get("meta_name")
+                    and custom_meta.get("meta_name") in meta_names
+                ):
+                    # create a tuple of file_type and number
+                    file_details = (
+                        file_data.get("file_type"),
+                        custom_meta.get("meta_value"),
+                    )
+                    file_detail_values.append(file_details)
+                    # only take the first match
+                    break
+    return file_detail_values
+
+
+def find_missing_value_by_sequence(values, match_pattern):
+    """
+    from list of values, use match pattern to collect a numeric sequence and check for
+    numbers missing from the sequence
+    For example, match_pattern of r"Figure (\\d+)" to get a list of 1, 2, 3, n
+    (note: two backslashes are used for one backslash in the above example
+     to avoid DeprecationWarning: invalid escape sequence in this comment)
+    """
+    missing_files = []
+
+    figure_meta_value_match = re.compile(match_pattern)
+    label_match = re.compile(r"\(\\d.?\)")
+
+    number_list = []
+    for meta_value in values:
+        match = figure_meta_value_match.match(meta_value)
+        if match:
+            number_list.append(int(match.group(1)))
+
+    number_list.sort()
+
+    prev_number = None
+    for number in number_list:
+        expected_number = None
+        if prev_number:
+            expected_number = prev_number + 1
+        if expected_number and number > expected_number:
+            # replace (\d) from the match pattern to get a missing file name
+            label = label_match.sub(str(expected_number), match_pattern)
+            missing_files.append(label)
+        prev_number = number
+
+    return missing_files
 
 
 def article_xml_asset(asset_file_name_map):
