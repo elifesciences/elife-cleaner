@@ -1,7 +1,9 @@
 import os
 import unittest
-from mock import patch
+import zipfile
+from collections import OrderedDict
 from xml.etree import ElementTree
+from mock import patch
 import wand
 from elifecleaner import configure_logging, parse, zip_lib
 from tests.helpers import delete_files_in_folder, read_fixture
@@ -33,6 +35,114 @@ class TestParse(unittest.TestCase):
                 log_file_lines.append(line)
         self.assertEqual(log_file_lines, expected)
 
+    def test_check_ejp_zip_missing_file(self):
+        zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
+        # remove a file from a copy of the zip file for testing
+        test_zip_file_name = os.path.join(self.temp_dir, "test_missing_file.zip")
+
+        remove_files = ["08-11-2020-FA-eLife-64719/eLife64719_figure2_classB.png"]
+        with zipfile.ZipFile(zip_file, "r") as input_zipfile:
+            with zipfile.ZipFile(test_zip_file_name, "w") as output_zipfile:
+                for zip_info in input_zipfile.infolist():
+                    if zip_info.filename not in remove_files:
+                        output_zipfile.writestr(
+                            zip_info, input_zipfile.read(zip_info.filename)
+                        )
+
+        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip:"
+        missing_file_prefix = "zip does not contain a file in the manifest:"
+        expected = [
+            "%s %s eLife64719_figure2_classB.png\n"
+            % (warning_prefix, missing_file_prefix),
+        ]
+
+        result = parse.check_ejp_zip(test_zip_file_name, self.temp_dir)
+        self.assertTrue(result)
+        log_file_lines = []
+        with open(self.log_file, "r") as open_file:
+            for line in open_file:
+                log_file_lines.append(line)
+        self.assertEqual(log_file_lines, expected)
+
+    def test_check_ejp_zip_extra_file(self):
+        zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
+        # alter the manifest XML in the zip file for testing
+        test_zip_file_name = os.path.join(self.temp_dir, "test_missing_file.zip")
+
+        xml_file_name = "08-11-2020-FA-eLife-64719/08-11-2020-FA-eLife-64719.xml"
+
+        with zipfile.ZipFile(zip_file, "r") as input_zipfile:
+            with zipfile.ZipFile(test_zip_file_name, "w") as output_zipfile:
+                for zip_info in input_zipfile.infolist():
+                    if zip_info.filename == xml_file_name:
+                        # replace <file> tags with <file_dummy> tags in the manifest XML
+                        mainfest_xml = input_zipfile.read(zip_info.filename)
+                        mainfest_xml = mainfest_xml.replace(
+                            b"<file", b"<file_dummy"
+                        ).replace(b"</file", b"</file_dummy")
+                        output_zipfile.writestr(zip_info, mainfest_xml)
+                    else:
+                        output_zipfile.writestr(
+                            zip_info, input_zipfile.read(zip_info.filename)
+                        )
+
+        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip:"
+        extra_file_prefix = "file not listed in the manifest:"
+        expected = [
+            "%s %s 08-11-2020-FA-eLife-64719.pdf\n"
+            % (warning_prefix, extra_file_prefix),
+            "%s %s eLife64719_figure1_classB.png\n"
+            % (warning_prefix, extra_file_prefix),
+            "%s %s eLife64719_figure2_classB.png\n"
+            % (warning_prefix, extra_file_prefix),
+            "%s %s eLife64719_template5.docx\n" % (warning_prefix, extra_file_prefix),
+        ]
+
+        result = parse.check_ejp_zip(test_zip_file_name, self.temp_dir)
+        self.assertTrue(result)
+        log_file_lines = []
+        with open(self.log_file, "r") as open_file:
+            for line in open_file:
+                log_file_lines.append(line)
+        self.assertEqual(log_file_lines, expected)
+
+    def test_check_ejp_zip_missing_file_by_name(self):
+        zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
+        # alter the manifest XML in the zip file for testing
+        test_zip_file_name = os.path.join(self.temp_dir, "test_missing_file.zip")
+
+        xml_file_name = "08-11-2020-FA-eLife-64719/08-11-2020-FA-eLife-64719.xml"
+
+        with zipfile.ZipFile(zip_file, "r") as input_zipfile:
+            with zipfile.ZipFile(test_zip_file_name, "w") as output_zipfile:
+                for zip_info in input_zipfile.infolist():
+                    if zip_info.filename == xml_file_name:
+                        # replace <file> tags with <file_dummy> tags in the manifest XML
+                        mainfest_xml = input_zipfile.read(zip_info.filename)
+                        mainfest_xml = mainfest_xml.replace(
+                            b"<meta-value>Figure 2</meta-value>",
+                            b"<meta-value>Figure 3</meta-value>",
+                        )
+                        output_zipfile.writestr(zip_info, mainfest_xml)
+                    else:
+                        output_zipfile.writestr(
+                            zip_info, input_zipfile.read(zip_info.filename)
+                        )
+
+        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip:"
+        extra_file_prefix = "file misisng from expected numeric sequence:"
+        expected = [
+            "%s %s Figure 2\n" % (warning_prefix, extra_file_prefix),
+        ]
+
+        result = parse.check_ejp_zip(test_zip_file_name, self.temp_dir)
+        self.assertTrue(result)
+        log_file_lines = []
+        with open(self.log_file, "r") as open_file:
+            for line in open_file:
+                log_file_lines.append(line)
+        self.assertEqual(log_file_lines, expected)
+
     def test_article_xml_name(self):
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
         asset_file_name_map = zip_lib.unzip_zip(zip_file, self.temp_dir)
@@ -40,6 +150,12 @@ class TestParse(unittest.TestCase):
             "30-01-2019-RA-eLife-45644/30-01-2019-RA-eLife-45644.xml",
             "tests/tmp/30-01-2019-RA-eLife-45644/30-01-2019-RA-eLife-45644.xml",
         )
+        xml_asset = parse.article_xml_asset(asset_file_name_map)
+        self.assertEqual(xml_asset, expected)
+
+    def test_article_xml_name_empty(self):
+        asset_file_name_map = []
+        expected = None
         xml_asset = parse.article_xml_asset(asset_file_name_map)
         self.assertEqual(xml_asset, expected)
 
@@ -162,3 +278,211 @@ class TestRepairArticleXml(unittest.TestCase):
         xml_string = '<article xmlns:xlink="http://www.w3.org/1999/xlink"></article>'
         expected = '<article xmlns:xlink="http://www.w3.org/1999/xlink"></article>'
         self.assertEqual(parse.repair_article_xml(xml_string), expected)
+
+
+class TestFindMissingFiles(unittest.TestCase):
+    def test_find_missing_files_complete(self):
+        files = []
+        asset_file_name_map = []
+        expected = []
+        self.assertEqual(parse.find_missing_files(files, asset_file_name_map), expected)
+
+    def test_find_missing_files_incomplete(self):
+        files = [
+            OrderedDict(
+                [
+                    ("file_type", "figure"),
+                    ("id", "2063134"),
+                    ("upload_file_nm", "eLife64719_figure1_classB.png"),
+                    (
+                        "custom_meta",
+                        [
+                            OrderedDict(
+                                [
+                                    ("meta_name", "Figure number"),
+                                    ("meta_value", "Figure 1"),
+                                ]
+                            )
+                        ],
+                    ),
+                ]
+            )
+        ]
+        asset_file_name_map = []
+        expected = ["eLife64719_figure1_classB.png"]
+        self.assertEqual(parse.find_missing_files(files, asset_file_name_map), expected)
+
+
+class TestFindExtraFiles(unittest.TestCase):
+    def test_find_extra_files_empty(self):
+        files = []
+        asset_file_name_map = []
+        expected = []
+        self.assertEqual(parse.find_extra_files(files, asset_file_name_map), expected)
+
+    def test_find_extra_files_complete(self):
+        files = [
+            OrderedDict(
+                [
+                    ("file_type", "figure"),
+                    ("id", "2063134"),
+                    ("upload_file_nm", "eLife64719_figure1_classB.png"),
+                    ("custom_meta", []),
+                ]
+            )
+        ]
+        asset_file_name_map = {
+            "08-11-2020-FA-eLife-64719/eLife64719_figure1_classB.png": (
+                "tests/tmp/08-11-2020-FA-eLife-64719/eLife64719_figure1_classB.png"
+            )
+        }
+        expected = []
+        self.assertEqual(parse.find_extra_files(files, asset_file_name_map), expected)
+
+    def test_find_extra_files_extra(self):
+        files = []
+        asset_file_name_map = {
+            "08-11-2020-FA-eLife-64719/eLife64719_figure1_classB.png": (
+                "tests/tmp/08-11-2020-FA-eLife-64719/eLife64719_figure1_classB.png"
+            )
+        }
+        expected = ["eLife64719_figure1_classB.png"]
+        self.assertEqual(parse.find_extra_files(files, asset_file_name_map), expected)
+
+
+class TestFindMissingFilesByName(unittest.TestCase):
+    def setUp(self):
+        self.files = [
+            OrderedDict(
+                [
+                    ("file_type", "figure"),
+                    ("id", "2063134"),
+                    ("upload_file_nm", "eLife64719_figure1_classB.png"),
+                    (
+                        "custom_meta",
+                        [
+                            OrderedDict(
+                                [
+                                    ("meta_name", "Figure number"),
+                                    ("meta_value", "Figure 1"),
+                                ]
+                            )
+                        ],
+                    ),
+                ]
+            ),
+            OrderedDict(
+                [
+                    ("file_type", "figure"),
+                    ("id", "2063135"),
+                    ("upload_file_nm", "eLife64719_figure2_classB.png"),
+                    (
+                        "custom_meta",
+                        [
+                            OrderedDict(
+                                [
+                                    ("meta_name", "Figure number"),
+                                    ("meta_value", "Figure 2"),
+                                ]
+                            )
+                        ],
+                    ),
+                ]
+            ),
+        ]
+
+    def test_find_missing_files_by_name_empty(self):
+        files = []
+        expected = []
+        self.assertEqual(parse.find_missing_files_by_name(files), expected)
+
+    def test_find_missing_files_by_name_complete(self):
+        expected = []
+        self.assertEqual(parse.find_missing_files_by_name(self.files), expected)
+
+    def test_find_missing_files_by_name_missing(self):
+        self.files[1]["custom_meta"][0]["meta_value"] = "Figure 3"
+        expected = ["Figure 2"]
+        self.assertEqual(parse.find_missing_files_by_name(self.files), expected)
+
+    def test_find_file_detail_values_empty(self):
+        files = []
+        file_types = []
+        meta_names = []
+        expected = []
+        self.assertEqual(
+            parse.find_file_detail_values(files, file_types, meta_names), expected
+        )
+
+    def test_find_file_detail_values(self):
+        files = [
+            {
+                "file_type": "figure",
+                "custom_meta": [
+                    {
+                        "meta_name": "Title",
+                        "meta_value": "Figure 1",
+                    }
+                ],
+            },
+            {
+                "file_type": "figure",
+                "custom_meta": [
+                    {
+                        "meta_name": "Figure number",
+                        "meta_value": "Figure 2",
+                    },
+                    {
+                        "meta_name": "Title",
+                        "meta_value": "Second value will be ignored",
+                    },
+                ],
+            },
+            {
+                "file_type": "additional_figure_data",
+                "custom_meta": [
+                    {
+                        "meta_name": "Figure number",
+                        "meta_value": "Figure 2-figure supplement 1",
+                    }
+                ],
+            },
+            {
+                "file_type": "not_a_figure",
+                "custom_meta": [
+                    {
+                        "meta_name": "Title",
+                        "meta_value": "Figure 3",
+                    }
+                ],
+            },
+        ]
+        file_types = ["figure"]
+        meta_names = ["Title", "Figure number"]
+        expected = [("figure", "Figure 1"), ("figure", "Figure 2")]
+        self.assertEqual(
+            parse.find_file_detail_values(files, file_types, meta_names), expected
+        )
+
+    def test_find_missing_value_by_sequence(self):
+        "test for matching double-digit numbers"
+        match_pattern = r"Figure (\d+)"
+        values = [
+            "Figure 1",
+            "Figure 2",
+            "Figure 3",
+            "Figure 4",
+            "Figure 5",
+            "Figure 6",
+            "Figure 7",
+            "Figure 8",
+            "Figure 9",
+            "Figure 10",
+            "Figure 11",
+            "Figure 13",
+        ]
+
+        expected = ["Figure 12"]
+        self.assertEqual(
+            parse.find_missing_value_by_sequence(values, match_pattern), expected
+        )
