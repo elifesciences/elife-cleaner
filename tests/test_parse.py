@@ -5,7 +5,7 @@ from collections import OrderedDict
 from xml.etree import ElementTree
 from mock import patch
 import wand
-from elifecleaner import configure_logging, parse, zip_lib
+from elifecleaner import LOGGER, configure_logging, parse, zip_lib
 from tests.helpers import delete_files_in_folder, read_fixture
 
 
@@ -13,16 +13,18 @@ class TestParse(unittest.TestCase):
     def setUp(self):
         self.temp_dir = "tests/tmp"
         self.log_file = os.path.join(self.temp_dir, "test.log")
-        configure_logging(self.log_file)
+        self.log_handler = configure_logging(self.log_file)
 
     def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
         delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
 
     def test_check_ejp_zip(self):
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
+        zip_file_name = zip_file.split(os.sep)[-1]
         warning_prefix = (
-            "WARNING elifecleaner:parse:check_ejp_zip: multiple page PDF figure file:"
-        )
+            "WARNING elifecleaner:parse:check_ejp_zip: %s multiple page PDF figure file:"
+        ) % zip_file_name
         expected = [
             "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 10.pdf\n" % warning_prefix,
             "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 11.pdf\n" % warning_prefix,
@@ -39,6 +41,7 @@ class TestParse(unittest.TestCase):
         zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
         # remove a file from a copy of the zip file for testing
         test_zip_file_name = os.path.join(self.temp_dir, "test_missing_file.zip")
+        zip_file_name = test_zip_file_name.split(os.sep)[-1]
 
         remove_files = ["08-11-2020-FA-eLife-64719/eLife64719_figure2_classB.png"]
         with zipfile.ZipFile(zip_file, "r") as input_zipfile:
@@ -49,8 +52,8 @@ class TestParse(unittest.TestCase):
                             zip_info, input_zipfile.read(zip_info.filename)
                         )
 
-        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip:"
-        missing_file_prefix = "zip does not contain a file in the manifest:"
+        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip: %s" % zip_file_name
+        missing_file_prefix = "does not contain a file in the manifest:"
         expected = [
             "%s %s eLife64719_figure2_classB.png\n"
             % (warning_prefix, missing_file_prefix),
@@ -68,6 +71,7 @@ class TestParse(unittest.TestCase):
         zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
         # alter the manifest XML in the zip file for testing
         test_zip_file_name = os.path.join(self.temp_dir, "test_missing_file.zip")
+        zip_file_name = test_zip_file_name.split(os.sep)[-1]
 
         xml_file_name = "08-11-2020-FA-eLife-64719/08-11-2020-FA-eLife-64719.xml"
 
@@ -86,8 +90,8 @@ class TestParse(unittest.TestCase):
                             zip_info, input_zipfile.read(zip_info.filename)
                         )
 
-        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip:"
-        extra_file_prefix = "file not listed in the manifest:"
+        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip: %s" % zip_file_name
+        extra_file_prefix = "has file not listed in the manifest:"
         expected = [
             "%s %s 08-11-2020-FA-eLife-64719.pdf\n"
             % (warning_prefix, extra_file_prefix),
@@ -110,6 +114,7 @@ class TestParse(unittest.TestCase):
         zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
         # alter the manifest XML in the zip file for testing
         test_zip_file_name = os.path.join(self.temp_dir, "test_missing_file.zip")
+        zip_file_name = test_zip_file_name.split(os.sep)[-1]
 
         xml_file_name = "08-11-2020-FA-eLife-64719/08-11-2020-FA-eLife-64719.xml"
 
@@ -129,8 +134,8 @@ class TestParse(unittest.TestCase):
                             zip_info, input_zipfile.read(zip_info.filename)
                         )
 
-        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip:"
-        extra_file_prefix = "file misisng from expected numeric sequence:"
+        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip: %s" % zip_file_name
+        extra_file_prefix = "has file misisng from expected numeric sequence:"
         expected = [
             "%s %s Figure 2\n" % (warning_prefix, extra_file_prefix),
         ]
