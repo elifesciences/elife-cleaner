@@ -5,7 +5,7 @@ from collections import OrderedDict
 from xml.etree import ElementTree
 from mock import patch
 import wand
-from elifecleaner import configure_logging, parse, zip_lib
+from elifecleaner import LOGGER, configure_logging, parse, zip_lib
 from tests.helpers import delete_files_in_folder, read_fixture
 
 
@@ -13,9 +13,10 @@ class TestParse(unittest.TestCase):
     def setUp(self):
         self.temp_dir = "tests/tmp"
         self.log_file = os.path.join(self.temp_dir, "test.log")
-        configure_logging(self.log_file)
+        self.log_handler = configure_logging(self.log_file)
 
     def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
         delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
 
     def test_check_ejp_zip(self):
