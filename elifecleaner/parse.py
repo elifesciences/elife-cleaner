@@ -1,3 +1,4 @@
+import os
 import re
 from collections import OrderedDict
 from xml.etree import ElementTree
@@ -14,21 +15,34 @@ def check_ejp_zip(zip_file, tmp_dir):
     root = parse_article_xml(xml_asset[1])
     files = file_list(root)
     figures = figure_list(files, asset_file_name_map)
+    zip_file_name = zip_file.split(os.sep)[-1]
     # check for multiple page PDF figures
     for pdf in [pdf for pdf in figures if pdf.get("pages") and pdf.get("pages") > 1]:
-        LOGGER.warning("multiple page PDF figure file: %s", pdf.get("file_name"))
+        LOGGER.warning(
+            "%s multiple page PDF figure file: %s", zip_file_name, pdf.get("file_name")
+        )
     # check for missing files
     missing_files = find_missing_files(files, asset_file_name_map)
     for missing_file in missing_files:
-        LOGGER.warning("zip does not contain a file in the manifest: %s" % missing_file)
+        LOGGER.warning(
+            "%s does not contain a file in the manifest: %s",
+            zip_file_name,
+            missing_file,
+        )
     # check for file not listed in the manifest
     extra_files = find_extra_files(files, asset_file_name_map)
     for extra_file in extra_files:
-        LOGGER.warning("file not listed in the manifest: %s" % extra_file)
+        LOGGER.warning(
+            "%s has file not listed in the manifest: %s", zip_file_name, extra_file
+        )
     # check for out of sequence files by name
     missing_files_by_name = find_missing_files_by_name(files)
     for missing_file in missing_files_by_name:
-        LOGGER.warning("file misisng from expected numeric sequence: %s" % missing_file)
+        LOGGER.warning(
+            "%s has file misisng from expected numeric sequence: %s",
+            zip_file_name,
+            missing_file,
+        )
 
     return True
 
