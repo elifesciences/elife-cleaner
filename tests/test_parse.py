@@ -284,6 +284,18 @@ class TestRepairArticleXml(unittest.TestCase):
         expected = '<article xmlns:xlink="http://www.w3.org/1999/xlink"></article>'
         self.assertEqual(parse.repair_article_xml(xml_string), expected)
 
+    def test_artice_id_tag(self):
+        # do not add to <article-id> tags
+        xml_string = (
+            '<article article-type="research-article"></article>'
+            '<article-id pub-id-type="publisher-id">45644</article-id>'
+        )
+        expected = (
+            '<article article-type="research-article" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            '</article><article-id pub-id-type="publisher-id">45644</article-id>'
+        )
+        self.assertEqual(parse.repair_article_xml(xml_string), expected)
+
 
 class TestFindMissingFiles(unittest.TestCase):
     def test_find_missing_files_complete(self):
