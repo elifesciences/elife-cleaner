@@ -225,9 +225,10 @@ def html_entity_unescape(xml_string):
 
 def repair_article_xml(xml_string):
     if 'xmlns:xlink="http://www.w3.org/1999/xlink"' not in xml_string:
-        return re.sub(
-            r"<article(.*?)>",
-            r'<article\1 xmlns:xlink="http://www.w3.org/1999/xlink">',
+        article_match_pattern = re.compile(r"<article>|<article(\s{1,}.*?)>")
+        replacement_pattern = r'<article\1 xmlns:xlink="http://www.w3.org/1999/xlink">'
+        return article_match_pattern.sub(
+            replacement_pattern,
             xml_string,
         )
     return xml_string
