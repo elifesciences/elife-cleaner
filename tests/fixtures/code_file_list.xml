@@ -1,0 +1,44 @@
+<article>
+    <front>
+        <article-meta>
+            <files>
+                <file file-type='figure' id='1119351'>
+                    <upload_file_nm>Figure 5.png</upload_file_nm>
+                    <order>1</order>
+                    <size units='bytes'>129684</size>
+                    <custom-meta>
+                        <meta-name>Figure number</meta-name>
+                        <meta-value>Figure 5</meta-value>
+                    </custom-meta>
+                </file>
+                <file file-type='aux_file' id='1119366'>
+                    <upload_file_nm>Figure 5source code 1.c</upload_file_nm>
+                    <order>2</order>
+                    <size units='bytes'>11193</size>
+                    <custom-meta>
+                        <meta-name>Title</meta-name>
+                        <meta-value>Figure 5-source code 1</meta-value>
+                    </custom-meta>
+                </file>
+                <file file-type='aux_file'>
+                    <upload_file_nm>Figure 5source code 2.c</upload_file_nm>
+                    <order>2</order>
+                    <size units='bytes'>11193</size>
+                    <custom-meta>
+                        <meta-name>Title</meta-name>
+                        <meta-value>Figure 5-source code 2</meta-value>
+                    </custom-meta>
+                </file>
+                <file file-type='aux_file'>
+                    <upload_file_nm>Figure 5source code 3.c.zip</upload_file_nm>
+                    <order>3</order>
+                    <size units='bytes'>11193</size>
+                    <custom-meta>
+                        <meta-name>Title</meta-name>
+                        <meta-value>Figure 5-source code 3</meta-value>
+                    </custom-meta>
+                </file>
+            </files>
+        </article-meta>
+    </front>
+</article>
