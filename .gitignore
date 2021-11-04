@@ -12,3 +12,5 @@ tmp/*
 !tmp/.keepme
 tests/tmp/*
 !tests/tmp/.keepme
+tests/tmp_output/*
+!tests/tmp_output/.keepme
