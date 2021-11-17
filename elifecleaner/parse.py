@@ -8,6 +8,10 @@ from wand.exceptions import PolicyError, WandRuntimeError
 from elifecleaner import LOGGER, zip_lib
 
 
+# flag for whether to try and repair XML if it encounters a ParseError
+REPAIR_XML = True
+
+
 def check_ejp_zip(zip_file, tmp_dir):
     "check contents of ejp zip file"
     asset_file_name_map = zip_lib.unzip_zip(zip_file, tmp_dir)
@@ -196,9 +200,13 @@ def parse_article_xml(xml_file):
         try:
             return ElementTree.fromstring(xml_string)
         except ElementTree.ParseError:
-            # try to repair the xml namespaces
-            xml_string = repair_article_xml(xml_string)
-            return ElementTree.fromstring(xml_string)
+            if REPAIR_XML:
+                # try to repair the xml namespaces
+                xml_string = repair_article_xml(xml_string)
+                return ElementTree.fromstring(xml_string)
+            else:
+                LOGGER.exception("ParseError raised because REPAIR_XML flag is False")
+                raise
 
 
 def replace_entity(match):

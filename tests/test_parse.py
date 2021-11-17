@@ -14,10 +14,12 @@ class TestParse(unittest.TestCase):
         self.temp_dir = "tests/tmp"
         self.log_file = os.path.join(self.temp_dir, "test.log")
         self.log_handler = configure_logging(self.log_file)
+        self.original_repair_xml_value = parse.REPAIR_XML
 
     def tearDown(self):
         LOGGER.removeHandler(self.log_handler)
         delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+        parse.REPAIR_XML = self.original_repair_xml_value
 
     def test_check_ejp_zip(self):
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
@@ -36,6 +38,17 @@ class TestParse(unittest.TestCase):
             for line in open_file:
                 log_file_lines.append(line)
         self.assertEqual(log_file_lines, expected)
+
+    def test_check_ejp_zip_do_not_repair_xml(self):
+        parse.REPAIR_XML = False
+        zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
+        with self.assertRaises(ElementTree.ParseError):
+            parse.check_ejp_zip(zip_file, self.temp_dir)
+        log_file_lines = []
+        with open(self.log_file, "r") as open_file:
+            for line in open_file:
+                log_file_lines.append(line)
+        self.assertTrue(log_file_lines[0].startswith("ERROR"))
 
     def test_check_ejp_zip_missing_file(self):
         zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
