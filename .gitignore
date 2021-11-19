@@ -3,7 +3,6 @@
 *.py~
 venv/*
 release-venv/
-.tox/*
 build/
 dist/
 elifecleaner.egg-info
