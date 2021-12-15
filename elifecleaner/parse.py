@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 import html
 from wand.image import Image
 from wand.exceptions import PolicyError, WandRuntimeError
-from elifecleaner import LOGGER, zip_lib
+from elifecleaner import LOGGER, pdf_utils, zip_lib
 
 
 # flag for whether to try and repair XML if it encounters a ParseError
@@ -21,10 +21,7 @@ def check_ejp_zip(zip_file, tmp_dir):
     figures = figure_list(files, asset_file_name_map)
     zip_file_name = zip_file.split(os.sep)[-1]
     # check for multiple page PDF figures
-    for pdf in [pdf for pdf in figures if pdf.get("pages") and pdf.get("pages") > 1]:
-        LOGGER.warning(
-            "%s multiple page PDF figure file: %s", zip_file_name, pdf.get("file_name")
-        )
+    check_multi_page_figure_pdf(figures, zip_file_name)
     # check for missing files
     missing_files = find_missing_files(files, asset_file_name_map)
     for missing_file in missing_files:
@@ -49,6 +46,37 @@ def check_ejp_zip(zip_file, tmp_dir):
         )
 
     return True
+
+
+def check_multi_page_figure_pdf(figures, zip_file_name):
+    pdfimages_available = pdf_utils.pdfimages_exists()
+    for pdf in [pdf for pdf in figures if pdf.get("pages") and pdf.get("pages") > 1]:
+        is_multi_page = False
+        if pdfimages_available:
+            LOGGER.info(
+                "%s using pdfimages to check PDF figure file: %s",
+                zip_file_name,
+                pdf.get("file_name"),
+            )
+            try:
+                image_pages = pdf_utils.pdf_image_pages(pdf.get("file_name"))
+                is_multi_page = bool([page for page in image_pages if page > 1])
+            except:
+                LOGGER.exception(
+                    "%s exception using pdfimages to check PDF figure file: %s",
+                    zip_file_name,
+                    pdf.get("file_name"),
+                )
+            finally:
+                is_multi_page = True
+        else:
+            is_multi_page = True
+        if is_multi_page:
+            LOGGER.warning(
+                "%s multiple page PDF figure file: %s",
+                zip_file_name,
+                pdf.get("file_name"),
+            )
 
 
 def find_missing_files(files, asset_file_name_map):

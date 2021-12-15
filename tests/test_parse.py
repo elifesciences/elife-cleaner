@@ -5,7 +5,7 @@ from collections import OrderedDict
 from xml.etree import ElementTree
 from mock import patch
 import wand
-from elifecleaner import LOGGER, configure_logging, parse, zip_lib
+from elifecleaner import LOGGER, configure_logging, parse, pdf_utils, zip_lib
 from tests.helpers import delete_files_in_folder, read_fixture
 
 
@@ -21,14 +21,22 @@ class TestParse(unittest.TestCase):
         delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
         parse.REPAIR_XML = self.original_repair_xml_value
 
-    def test_check_ejp_zip(self):
+    @patch.object(pdf_utils, "pdf_image_pages")
+    @patch.object(pdf_utils, "pdfimages_exists")
+    def test_check_ejp_zip(self, mock_pdfimages_exists, mock_pdf_image_pages):
+        mock_pdfimages_exists.return_value = True
+        mock_pdf_image_pages.return_value = {1}
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
         zip_file_name = zip_file.split(os.sep)[-1]
-        warning_prefix = (
-            "WARNING elifecleaner:parse:check_ejp_zip: %s multiple page PDF figure file:"
+        log_prefix = (
+            "elifecleaner:parse:check_multi_page_figure_pdf: %s"
         ) % zip_file_name
+        warning_prefix = ("WARNING %s multiple page PDF figure file:") % log_prefix
+        info_prefix = ("INFO %s using pdfimages to check PDF figure file:") % log_prefix
         expected = [
+            "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 10.pdf\n" % info_prefix,
             "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 10.pdf\n" % warning_prefix,
+            "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 11.pdf\n" % info_prefix,
             "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 11.pdf\n" % warning_prefix,
         ]
         result = parse.check_ejp_zip(zip_file, self.temp_dir)
@@ -341,6 +349,56 @@ class TestFindMissingFiles(unittest.TestCase):
         asset_file_name_map = []
         expected = ["eLife64719_figure1_classB.png"]
         self.assertEqual(parse.find_missing_files(files, asset_file_name_map), expected)
+
+
+class TestCheckMultiPageFigurePdf(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    @patch.object(pdf_utils, "pdf_image_pages")
+    @patch.object(pdf_utils, "pdfimages_exists")
+    def test_check_multi_page_figure_pdf(
+        self, mock_pdfimages_exists, mock_pdf_image_pages
+    ):
+        figures = [{"file_name": "figure.pdf", "pages": 2}]
+        zip_file = "30-01-2019-RA-eLife-45644.zip"
+        mock_pdfimages_exists.return_value = False
+        mock_pdf_image_pages.return_value = {1, 2}
+        expected = None
+        self.assertEqual(parse.check_multi_page_figure_pdf(figures, zip_file), expected)
+        log_file_lines = []
+        with open(self.log_file, "r") as open_file:
+            for line in open_file:
+                log_file_lines.append(line)
+        self.assertTrue(
+            "multiple page PDF figure file: figure.pdf" in log_file_lines[0]
+        )
+
+    @patch.object(pdf_utils, "pdf_image_pages")
+    @patch.object(pdf_utils, "pdfimages_exists")
+    def test_check_multi_page_figure_pdf_exception(
+        self, mock_pdfimages_exists, mock_pdf_image_pages
+    ):
+        figures = [{"file_name": "figure.pdf", "pages": 2}]
+        zip_file = "30-01-2019-RA-eLife-45644.zip"
+        mock_pdfimages_exists.return_value = True
+        mock_pdf_image_pages.side_effect = Exception("An exception")
+        expected = None
+        self.assertEqual(parse.check_multi_page_figure_pdf(figures, zip_file), expected)
+        log_file_lines = []
+        with open(self.log_file, "r") as open_file:
+            for line in open_file:
+                log_file_lines.append(line)
+        self.assertTrue("Exception:" in log_file_lines[-2])
+        self.assertTrue(
+            "multiple page PDF figure file: figure.pdf" in log_file_lines[-1]
+        )
 
 
 class TestFindExtraFiles(unittest.TestCase):
