@@ -25,7 +25,7 @@ class TestParse(unittest.TestCase):
     @patch.object(pdf_utils, "pdfimages_exists")
     def test_check_ejp_zip(self, mock_pdfimages_exists, mock_pdf_image_pages):
         mock_pdfimages_exists.return_value = True
-        mock_pdf_image_pages.return_value = {1}
+        mock_pdf_image_pages.return_value = {1, 2}
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
         zip_file_name = zip_file.split(os.sep)[-1]
         log_prefix = (
@@ -33,10 +33,17 @@ class TestParse(unittest.TestCase):
         ) % zip_file_name
         warning_prefix = ("WARNING %s multiple page PDF figure file:") % log_prefix
         info_prefix = ("INFO %s using pdfimages to check PDF figure file:") % log_prefix
+        info_pages_prefix = (
+            "INFO %s pdfimages found images on pages {1, 2} in PDF figure file:"
+        ) % log_prefix
         expected = [
             "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 10.pdf\n" % info_prefix,
+            "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 10.pdf\n"
+            % info_pages_prefix,
             "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 10.pdf\n" % warning_prefix,
             "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 11.pdf\n" % info_prefix,
+            "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 11.pdf\n"
+            % info_pages_prefix,
             "%s 30-01-2019-RA-eLife-45644/Appendix 1figure 11.pdf\n" % warning_prefix,
         ]
         result = parse.check_ejp_zip(zip_file, self.temp_dir)
