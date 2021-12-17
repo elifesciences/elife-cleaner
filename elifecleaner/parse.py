@@ -59,7 +59,13 @@ def check_multi_page_figure_pdf(figures, zip_file_name):
                 pdf.get("file_name"),
             )
             try:
-                image_pages = pdf_utils.pdf_image_pages(pdf.get("file_name"))
+                image_pages = pdf_utils.pdf_image_pages(pdf.get("file_path"))
+                LOGGER.info(
+                    "%s pdfimages found images on pages %s in PDF figure file: %s",
+                    zip_file_name,
+                    image_pages,
+                    pdf.get("file_name"),
+                )
                 is_multi_page = bool([page for page in image_pages if page > 1])
             except:
                 LOGGER.exception(
@@ -67,7 +73,7 @@ def check_multi_page_figure_pdf(figures, zip_file_name):
                     zip_file_name,
                     pdf.get("file_name"),
                 )
-            finally:
+                # consider it multi page in the case pdfimages raises an exception
                 is_multi_page = True
         else:
             is_multi_page = True
