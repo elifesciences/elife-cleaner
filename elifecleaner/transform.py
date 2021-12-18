@@ -2,6 +2,7 @@ import copy
 import os
 import zipfile
 from elifetools import xmlio
+from elifetools import parseJATS as parser
 from elifecleaner import LOGGER, parse, zip_lib
 
 
@@ -63,6 +64,10 @@ def transform_ejp_zip(zip_file, tmp_dir, output_dir):
     # rewrite the XML tags
     LOGGER.info("%s rewriting xml tags" % zip_file_name)
     root = transform_xml_file_tags(root, file_transformations)
+
+    # remove history tags from XML for certain article types
+    soup = parser.parse_document(xml_asset_path)
+    root = transform_xml_history_tags(root, soup, zip_file_name)
 
     # write new XML file
     xml_string = xml_element_to_string(root)
@@ -141,6 +146,25 @@ def transform_xml_file_tags(root, file_transformations):
     for file_nm_tag in root.findall("./front/article-meta/files/file/upload_file_nm"):
         if file_nm_tag.text in xml_file_name_transforms:
             file_nm_tag.text = xml_file_name_transforms.get(file_nm_tag.text)
+    return root
+
+
+def transform_xml_history_tags(root, soup, zip_file_name):
+    "remove history tags from the XML for particular article types"
+    article_type = parser.article_type(soup)
+    display_channel_list = parser.display_channel(soup)
+    LOGGER.info(
+        "%s article_type %s, display_channel %s"
+        % (zip_file_name, article_type, display_channel_list)
+    )
+    if article_type in ["correction", "editorial", "retraction"] or (
+        article_type == "article-commentary"
+        and "insight" in [value.lower() for value in display_channel_list if value]
+    ):
+        LOGGER.info("%s transforming xml history tags" % zip_file_name)
+        # remove history tag
+        for history_tag in root.findall("./front/article-meta/history"):
+            root.find("./front/article-meta").remove(history_tag)
     return root
 
 

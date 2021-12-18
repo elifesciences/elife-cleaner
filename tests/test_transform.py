@@ -3,6 +3,7 @@ import os
 import unittest
 import zipfile
 from xml.etree import ElementTree
+from elifetools import parseJATS as parser
 from elifecleaner import LOGGER, configure_logging, transform
 from elifecleaner.transform import ArticleZipFile
 from tests.helpers import delete_files_in_folder, read_fixture
@@ -74,6 +75,11 @@ class TestTransform(unittest.TestCase):
         self.assertEqual(log_file_lines[4], "%s rewriting xml tags\n" % info_prefix)
         self.assertEqual(
             log_file_lines[5],
+            "INFO elifecleaner:transform:transform_xml_history_tags: %s article_type research-article, display_channel ['Research Article']\n"
+            % zip_file_name,
+        )
+        self.assertEqual(
+            log_file_lines[6],
             (
                 "%s writing xml to file"
                 " tests/tmp/30-01-2019-RA-eLife-45644/30-01-2019-RA-eLife-45644.xml\n"
@@ -81,7 +87,7 @@ class TestTransform(unittest.TestCase):
             % info_prefix,
         )
         self.assertEqual(
-            log_file_lines[6],
+            log_file_lines[7],
             (
                 "%s writing new zip file"
                 " tests/tmp_output/30-01-2019-RA-eLife-45644.zip\n"
@@ -284,6 +290,75 @@ class TestTransformXmlFileTags(unittest.TestCase):
         # assert the XML text is different
         self.assertEqual(upload_file_nm_tags[1].text, test_data[0].get("to_xml"))
         self.assertEqual(upload_file_nm_tags[2].text, test_data[1].get("to_xml"))
+
+
+class TestTransformXmlHistoryTags(unittest.TestCase):
+    def test_transform_xml_history_tags_research_article(self):
+        "research-article XML will be unchanged"
+        # populate an ElementTree
+        xml_string = (
+            '<article article-type="research-article">'
+            "<front>"
+            "<article-meta>"
+            "<article-categories>"
+            '<subj-group subj-group-type="display-channel">'
+            "<subject>Test</subject>"
+            "</subj-group>"
+            "</article-categories>"
+            "<history>"
+            "<date/>"
+            "</history>"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        root = ElementTree.fromstring(xml_string)
+        soup = parser.parse_xml(xml_string)
+        # invoke the function
+        root_output = transform.transform_xml_history_tags(root, soup, "test.zip")
+        # find the tag in the XML root returned which will have been altered
+        expected = '<?xml version="1.0" ?>%s' % xml_string
+        self.assertEqual(transform.xml_element_to_string(root_output), expected)
+
+    def test_transform_xml_history_tags_correction_article(self):
+        "test removing history tag from a correction article XML"
+        # populate an ElementTree
+        xml_string = (
+            '<article article-type="correction">'
+            "<front>"
+            "<article-meta>"
+            "<article-categories>"
+            '<subj-group subj-group-type="display-channel">'
+            "<subject>Correction</subject>"
+            "</subj-group>"
+            "</article-categories>"
+            "<history>"
+            "<date/>"
+            "</history>"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        root = ElementTree.fromstring(xml_string)
+        soup = parser.parse_xml(xml_string)
+        # invoke the function
+        root_output = transform.transform_xml_history_tags(root, soup, "test.zip")
+        # find the tag in the XML root returned which will have been altered
+        expected = (
+            '<?xml version="1.0" ?>'
+            '<article article-type="correction">'
+            "<front>"
+            "<article-meta>"
+            "<article-categories>"
+            '<subj-group subj-group-type="display-channel">'
+            "<subject>Correction</subject>"
+            "</subj-group>"
+            "</article-categories>"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        self.assertEqual(transform.xml_element_to_string(root_output), expected)
 
 
 class TestTransformAssetFileNameMap(unittest.TestCase):
