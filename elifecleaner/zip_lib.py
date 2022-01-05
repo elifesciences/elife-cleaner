@@ -16,9 +16,8 @@ def profile_zip(file_name):
 
 def unzip_file(open_zipfile, zip_file_info, output_path):
     "read the zip_file_info from the open_zipfile and write to output_path"
-    with open_zipfile.open(zip_file_info) as zip_content:
-        with open(output_path, "wb") as output_file:
-            output_file.write(zip_content.read())
+    with open(output_path, "wb") as output_file:
+        output_file.write(open_zipfile.read(zip_file_info))
 
 
 def unzip_zip(file_name, temp_dir):
