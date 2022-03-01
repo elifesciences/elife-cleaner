@@ -18,51 +18,40 @@ def check_ejp_zip(zip_file, tmp_dir):
     xml_asset = article_xml_asset(asset_file_name_map)
     root = parse_article_xml(xml_asset[1])
     files = file_list(root)
-    figures = figure_list(files, asset_file_name_map)
-    zip_file_name = zip_file.split(os.sep)[-1]
-    # check for multiple page PDF figures
-    check_multi_page_figure_pdf(figures, zip_file_name)
-    # check for missing files
-    missing_files = find_missing_files(files, asset_file_name_map)
-    for missing_file in missing_files:
-        LOGGER.warning(
-            "%s does not contain a file in the manifest: %s",
-            zip_file_name,
-            missing_file,
-        )
-    # check for file not listed in the manifest
-    extra_files = find_extra_files(files, asset_file_name_map)
-    for extra_file in extra_files:
-        LOGGER.warning(
-            "%s has file not listed in the manifest: %s", zip_file_name, extra_file
-        )
-    # check for out of sequence files by name
-    missing_files_by_name = find_missing_files_by_name(files)
-    for missing_file in missing_files_by_name:
-        LOGGER.warning(
-            "%s has file misisng from expected numeric sequence: %s",
-            zip_file_name,
-            missing_file,
-        )
+    # use the zip file name as the identifier for log messages
+    identifer = zip_file.split(os.sep)[-1]
+    return check_files(files, asset_file_name_map, identifer)
 
+
+def check_files(files, asset_file_name_map, identifier):
+    figures = figure_list(files, asset_file_name_map)
+    figures = set_figure_pdf_pages_count(figures)
+    # check for multiple page PDF figures
+    check_multi_page_figure_pdf(figures, identifier)
+    # check for missing files
+    check_missing_files(files, asset_file_name_map, identifier)
+    # check for file not listed in the manifest
+    extra_files = check_extra_files(files, asset_file_name_map, identifier)
+    # check for out of sequence files by name
+    check_missing_files_by_name(files, identifier)
     return True
 
 
-def check_multi_page_figure_pdf(figures, zip_file_name):
+def check_multi_page_figure_pdf(figures, identifier):
     pdfimages_available = pdf_utils.pdfimages_exists()
     for pdf in [pdf for pdf in figures if pdf.get("pages") and pdf.get("pages") > 1]:
         is_multi_page = False
         if pdfimages_available:
             LOGGER.info(
                 "%s using pdfimages to check PDF figure file: %s",
-                zip_file_name,
+                identifier,
                 pdf.get("file_name"),
             )
             try:
                 image_pages = pdf_utils.pdf_image_pages(pdf.get("file_path"))
                 LOGGER.info(
                     "%s pdfimages found images on pages %s in PDF figure file: %s",
-                    zip_file_name,
+                    identifier,
                     image_pages,
                     pdf.get("file_name"),
                 )
@@ -70,7 +59,7 @@ def check_multi_page_figure_pdf(figures, zip_file_name):
             except:
                 LOGGER.exception(
                     "%s exception using pdfimages to check PDF figure file: %s",
-                    zip_file_name,
+                    identifier,
                     pdf.get("file_name"),
                 )
                 # consider it multi page in the case pdfimages raises an exception
@@ -80,9 +69,20 @@ def check_multi_page_figure_pdf(figures, zip_file_name):
         if is_multi_page:
             LOGGER.warning(
                 "%s multiple page PDF figure file: %s",
-                zip_file_name,
+                identifier,
                 pdf.get("file_name"),
             )
+
+
+def check_missing_files(files, asset_file_name_map, identifier):
+    "check for missing files and log a warning if missing"
+    missing_files = find_missing_files(files, asset_file_name_map)
+    for missing_file in missing_files:
+        LOGGER.warning(
+            "%s does not contain a file in the manifest: %s",
+            identifier,
+            missing_file,
+        )
 
 
 def find_missing_files(files, asset_file_name_map):
@@ -95,6 +95,15 @@ def find_missing_files(files, asset_file_name_map):
         if manifest_file.get("upload_file_nm") not in asset_file_name_keys:
             missing_files.append(manifest_file.get("upload_file_nm"))
     return missing_files
+
+
+def check_extra_files(files, asset_file_name_map, identifier):
+    "check for extra files and log them as a warning if present"
+    extra_files = find_extra_files(files, asset_file_name_map)
+    for extra_file in extra_files:
+        LOGGER.warning(
+            "%s has file not listed in the manifest: %s", identifier, extra_file
+        )
 
 
 def find_extra_files(files, asset_file_name_map):
@@ -123,6 +132,17 @@ def find_extra_files(files, asset_file_name_map):
         if file_name not in manifest_file_names:
             extra_files.append(file_name)
     return extra_files
+
+
+def check_missing_files_by_name(files, identifier):
+    "check for files numbered out of sequence and log a warning when found"
+    missing_files_by_name = find_missing_files_by_name(files)
+    for missing_file in missing_files_by_name:
+        LOGGER.warning(
+            "%s has file misisng from expected numeric sequence: %s",
+            identifier,
+            missing_file,
+        )
 
 
 def find_missing_files_by_name(files):
@@ -313,6 +333,7 @@ def file_list(root):
 
 
 def figure_list(files, asset_file_name_map):
+    "identify which files are a figure and collect some data about them"
     figures = []
 
     figure_files = [
@@ -329,10 +350,16 @@ def figure_list(files, asset_file_name_map):
                 figure_detail["file_name"] = asset_file_name[0]
                 figure_detail["file_path"] = asset_file_name[1]
                 break
-        if figure_detail["extension"] == "pdf":
-            figure_detail["pages"] = pdf_page_count(figure_detail.get("file_path"))
         figures.append(figure_detail)
     return figures
+
+
+def set_figure_pdf_pages_count(figure_assets):
+    "for the pdf files count the number of pages and set the property"
+    for figure_detail in figure_assets:
+        if figure_detail["extension"] == "pdf":
+            figure_detail["pages"] = pdf_page_count(figure_detail.get("file_path"))
+    return figure_assets
 
 
 def file_extension(file_name):
