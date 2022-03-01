@@ -9,7 +9,27 @@ from elifecleaner import LOGGER, configure_logging, parse, pdf_utils, zip_lib
 from tests.helpers import delete_files_in_folder, read_fixture
 
 
+def read_log_file_lines(log_file_path):
+    "read log file lines as a list for using in test assertions"
+    log_file_lines = []
+    with open(log_file_path, "r") as open_file:
+        for line in open_file:
+            log_file_lines.append(line)
+    return log_file_lines
+
+
 class TestParse(unittest.TestCase):
+    def test_file_extension(self):
+        self.assertEqual(parse.file_extension("image.JPG"), "jpg")
+        self.assertEqual(parse.file_extension("folder/figure.pdf"), "pdf")
+        self.assertEqual(parse.file_extension("test"), None)
+        self.assertIsNone(parse.file_extension(None))
+
+    def test_pdf_page_count_blank(self):
+        self.assertIsNone(parse.pdf_page_count(""))
+
+
+class TestCheckEjpZip(unittest.TestCase):
     def setUp(self):
         self.temp_dir = "tests/tmp"
         self.log_file = os.path.join(self.temp_dir, "test.log")
@@ -48,21 +68,14 @@ class TestParse(unittest.TestCase):
         ]
         result = parse.check_ejp_zip(zip_file, self.temp_dir)
         self.assertTrue(result)
-        log_file_lines = []
-        with open(self.log_file, "r") as open_file:
-            for line in open_file:
-                log_file_lines.append(line)
-        self.assertEqual(log_file_lines, expected)
+        self.assertEqual(read_log_file_lines(self.log_file), expected)
 
     def test_check_ejp_zip_do_not_repair_xml(self):
         parse.REPAIR_XML = False
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
         with self.assertRaises(ElementTree.ParseError):
             parse.check_ejp_zip(zip_file, self.temp_dir)
-        log_file_lines = []
-        with open(self.log_file, "r") as open_file:
-            for line in open_file:
-                log_file_lines.append(line)
+        log_file_lines = read_log_file_lines(self.log_file)
         self.assertTrue(log_file_lines[0].startswith("ERROR"))
 
     def test_check_ejp_zip_missing_file(self):
@@ -80,7 +93,9 @@ class TestParse(unittest.TestCase):
                             zip_info, input_zipfile.read(zip_info.filename)
                         )
 
-        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip: %s" % zip_file_name
+        warning_prefix = (
+            "WARNING elifecleaner:parse:check_missing_files: %s" % zip_file_name
+        )
         missing_file_prefix = "does not contain a file in the manifest:"
         expected = [
             "%s %s eLife64719_figure2_classB.png\n"
@@ -89,11 +104,7 @@ class TestParse(unittest.TestCase):
 
         result = parse.check_ejp_zip(test_zip_file_name, self.temp_dir)
         self.assertTrue(result)
-        log_file_lines = []
-        with open(self.log_file, "r") as open_file:
-            for line in open_file:
-                log_file_lines.append(line)
-        self.assertEqual(log_file_lines, expected)
+        self.assertEqual(read_log_file_lines(self.log_file), expected)
 
     def test_check_ejp_zip_extra_file(self):
         zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
@@ -118,7 +129,9 @@ class TestParse(unittest.TestCase):
                             zip_info, input_zipfile.read(zip_info.filename)
                         )
 
-        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip: %s" % zip_file_name
+        warning_prefix = (
+            "WARNING elifecleaner:parse:check_extra_files: %s" % zip_file_name
+        )
         extra_file_prefix = "has file not listed in the manifest:"
         expected = [
             "%s %s 08-11-2020-FA-eLife-64719.pdf\n"
@@ -132,11 +145,7 @@ class TestParse(unittest.TestCase):
 
         result = parse.check_ejp_zip(test_zip_file_name, self.temp_dir)
         self.assertTrue(result)
-        log_file_lines = []
-        with open(self.log_file, "r") as open_file:
-            for line in open_file:
-                log_file_lines.append(line)
-        self.assertEqual(log_file_lines, expected)
+        self.assertEqual(read_log_file_lines(self.log_file), expected)
 
     def test_check_ejp_zip_missing_file_by_name(self):
         zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
@@ -162,7 +171,9 @@ class TestParse(unittest.TestCase):
                             zip_info, input_zipfile.read(zip_info.filename)
                         )
 
-        warning_prefix = "WARNING elifecleaner:parse:check_ejp_zip: %s" % zip_file_name
+        warning_prefix = (
+            "WARNING elifecleaner:parse:check_missing_files_by_name: %s" % zip_file_name
+        )
         extra_file_prefix = "has file misisng from expected numeric sequence:"
         expected = [
             "%s %s Figure 2\n" % (warning_prefix, extra_file_prefix),
@@ -170,11 +181,15 @@ class TestParse(unittest.TestCase):
 
         result = parse.check_ejp_zip(test_zip_file_name, self.temp_dir)
         self.assertTrue(result)
-        log_file_lines = []
-        with open(self.log_file, "r") as open_file:
-            for line in open_file:
-                log_file_lines.append(line)
-        self.assertEqual(log_file_lines, expected)
+        self.assertEqual(read_log_file_lines(self.log_file), expected)
+
+
+class TestArticleXmlAsset(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+
+    def tearDown(self):
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
 
     def test_article_xml_name(self):
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
@@ -192,24 +207,16 @@ class TestParse(unittest.TestCase):
         xml_asset = parse.article_xml_asset(asset_file_name_map)
         self.assertEqual(xml_asset, expected)
 
-    def test_file_list(self):
-        zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
-        asset_file_name_map = zip_lib.unzip_zip(zip_file, self.temp_dir)
-        xml_asset = parse.article_xml_asset(asset_file_name_map)
-        root = parse.parse_article_xml(xml_asset[1])
-        expected = read_fixture("file_list_45644.py")
 
-        files = parse.file_list(root)
-        self.assertEqual(files, expected)
+class TestPdfPageCount(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
 
-    def test_file_extension(self):
-        self.assertEqual(parse.file_extension("image.JPG"), "jpg")
-        self.assertEqual(parse.file_extension("folder/figure.pdf"), "pdf")
-        self.assertEqual(parse.file_extension("test"), None)
-        self.assertIsNone(parse.file_extension(None))
-
-    def test_pdf_page_count_blank(self):
-        self.assertIsNone(parse.pdf_page_count(""))
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
 
     @patch.object(wand.image.Image, "allocate")
     def test_pdf_page_count_wand_runtime_error(self, mock_image_allocate):
@@ -220,14 +227,12 @@ class TestParse(unittest.TestCase):
         pdf_path = "tests/tmp/30-01-2019-RA-eLife-45644/Appendix 1figure 10.pdf"
         with self.assertRaises(wand.exceptions.WandRuntimeError):
             self.assertIsNone(parse.pdf_page_count(pdf_path))
-        with open(self.log_file, "r") as open_file:
-            self.assertEqual(
-                open_file.readline(),
-                (
-                    "ERROR elifecleaner:parse:pdf_page_count: "
-                    "WandRuntimeError in pdf_page_count(), imagemagick may not be installed\n"
-                ),
-            )
+        expected = (
+            "ERROR elifecleaner:parse:pdf_page_count: "
+            "WandRuntimeError in pdf_page_count(), imagemagick may not be installed\n"
+        )
+        log_file_lines = read_log_file_lines(self.log_file)
+        self.assertEqual(log_file_lines[0], expected)
 
     @patch.object(wand.image.Image, "allocate")
     def test_pdf_page_count_wand_policy_error(self, mock_image_allocate):
@@ -238,15 +243,13 @@ class TestParse(unittest.TestCase):
         pdf_path = "tests/tmp/30-01-2019-RA-eLife-45644/Appendix 1figure 10.pdf"
         with self.assertRaises(wand.exceptions.PolicyError):
             self.assertIsNone(parse.pdf_page_count(pdf_path))
-        with open(self.log_file, "r") as open_file:
-            self.assertEqual(
-                open_file.readline(),
-                (
-                    "ERROR elifecleaner:parse:pdf_page_count: "
-                    "PolicyError in pdf_page_count(), "
-                    "imagemagick policy.xml may not allow reading PDF files\n"
-                ),
-            )
+        expected = (
+            "ERROR elifecleaner:parse:pdf_page_count: "
+            "PolicyError in pdf_page_count(), "
+            "imagemagick policy.xml may not allow reading PDF files\n"
+        )
+        log_file_lines = read_log_file_lines(self.log_file)
+        self.assertEqual(log_file_lines[0], expected)
 
 
 class TestParseArticleXML(unittest.TestCase):
@@ -325,10 +328,54 @@ class TestRepairArticleXml(unittest.TestCase):
         self.assertEqual(parse.repair_article_xml(xml_string), expected)
 
 
+class TestParseFileList(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+
+    def tearDown(self):
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_file_list(self):
+        zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
+        asset_file_name_map = zip_lib.unzip_zip(zip_file, self.temp_dir)
+        xml_asset = parse.article_xml_asset(asset_file_name_map)
+        root = parse.parse_article_xml(xml_asset[1])
+        expected = read_fixture("file_list_45644.py")
+
+        files = parse.file_list(root)
+        self.assertEqual(files, expected)
+
+
+class TestCheckMissingFiles(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    @patch.object(parse, "find_missing_files")
+    def test_check_missing_files(self, mock_missing_files):
+        identifier = "test.zip"
+        missing_files = ["file.jpg"]
+        mock_missing_files.return_value = missing_files
+        expected = [
+            (
+                "WARNING elifecleaner:parse:check_missing_files: %s "
+                "does not contain a file in the manifest: %s\n"
+            )
+            % (identifier, missing_files[0])
+        ]
+        parse.check_missing_files([], {}, identifier)
+        self.assertEqual(read_log_file_lines(self.log_file), expected)
+
+
 class TestFindMissingFiles(unittest.TestCase):
     def test_find_missing_files_complete(self):
         files = []
-        asset_file_name_map = []
+        asset_file_name_map = {}
         expected = []
         self.assertEqual(parse.find_missing_files(files, asset_file_name_map), expected)
 
@@ -353,7 +400,7 @@ class TestFindMissingFiles(unittest.TestCase):
                 ]
             )
         ]
-        asset_file_name_map = []
+        asset_file_name_map = {}
         expected = ["eLife64719_figure1_classB.png"]
         self.assertEqual(parse.find_missing_files(files, asset_file_name_map), expected)
 
@@ -379,10 +426,7 @@ class TestCheckMultiPageFigurePdf(unittest.TestCase):
         mock_pdf_image_pages.return_value = {1, 2}
         expected = None
         self.assertEqual(parse.check_multi_page_figure_pdf(figures, zip_file), expected)
-        log_file_lines = []
-        with open(self.log_file, "r") as open_file:
-            for line in open_file:
-                log_file_lines.append(line)
+        log_file_lines = read_log_file_lines(self.log_file)
         self.assertTrue(
             "multiple page PDF figure file: figure.pdf" in log_file_lines[0]
         )
@@ -398,20 +442,43 @@ class TestCheckMultiPageFigurePdf(unittest.TestCase):
         mock_pdf_image_pages.side_effect = Exception("An exception")
         expected = None
         self.assertEqual(parse.check_multi_page_figure_pdf(figures, zip_file), expected)
-        log_file_lines = []
-        with open(self.log_file, "r") as open_file:
-            for line in open_file:
-                log_file_lines.append(line)
+        log_file_lines = read_log_file_lines(self.log_file)
         self.assertTrue("Exception:" in log_file_lines[-2])
         self.assertTrue(
             "multiple page PDF figure file: figure.pdf" in log_file_lines[-1]
         )
 
 
+class TestCheckExtraFiles(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    @patch.object(parse, "find_extra_files")
+    def test_check_extra_files(self, mock_extra_files):
+        identifier = "test.zip"
+        extra_files = ["file.jpg"]
+        mock_extra_files.return_value = extra_files
+        expected = [
+            (
+                "WARNING elifecleaner:parse:check_extra_files: %s "
+                "has file not listed in the manifest: %s\n"
+            )
+            % (identifier, extra_files[0])
+        ]
+        parse.check_extra_files([], {}, identifier)
+        self.assertEqual(read_log_file_lines(self.log_file), expected)
+
+
 class TestFindExtraFiles(unittest.TestCase):
     def test_find_extra_files_empty(self):
         files = []
-        asset_file_name_map = []
+        asset_file_name_map = {}
         expected = []
         self.assertEqual(parse.find_extra_files(files, asset_file_name_map), expected)
 
@@ -443,6 +510,32 @@ class TestFindExtraFiles(unittest.TestCase):
         }
         expected = ["eLife64719_figure1_classB.png"]
         self.assertEqual(parse.find_extra_files(files, asset_file_name_map), expected)
+
+
+class TestCheckMissingFilesByName(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    @patch.object(parse, "find_missing_files_by_name")
+    def test_check_missing_files_by_name(self, mock_missing_files):
+        identifier = "test.zip"
+        missing_files = ["Figure 2"]
+        mock_missing_files.return_value = missing_files
+        expected = [
+            (
+                "WARNING elifecleaner:parse:check_missing_files_by_name: %s "
+                "has file misisng from expected numeric sequence: %s\n"
+            )
+            % (identifier, missing_files[0])
+        ]
+        parse.check_missing_files_by_name([], identifier)
+        self.assertEqual(read_log_file_lines(self.log_file), expected)
 
 
 class TestFindMissingFilesByName(unittest.TestCase):
