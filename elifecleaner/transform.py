@@ -25,26 +25,66 @@ class ArticleZipFile:
 def transform_ejp_zip(zip_file, tmp_dir, output_dir):
     "transform ejp zip file and write a new zip file output"
 
-    new_zip_file_path = None
     zip_file_name = zip_file.split(os.sep)[-1]
+
+    # profile the zip contents
+    asset_file_name_map = zip_lib.unzip_zip(zip_file, tmp_dir)
 
     # start logging
     LOGGER.info("%s starting to transform", zip_file_name)
 
-    # profile the zip contents
-    asset_file_name_map = zip_lib.unzip_zip(zip_file, tmp_dir)
+    new_asset_file_name_map = transform_ejp_files(
+        asset_file_name_map, output_dir, zip_file_name
+    )
+
+    # write new zip file
+    new_zip_file_path = rezip(new_asset_file_name_map, output_dir, zip_file_name)
+
+    return new_zip_file_path
+
+
+def transform_ejp_files(asset_file_name_map, output_dir, identifier):
+    "transform ejp files and XML"
+    xml_asset = parse.article_xml_asset(asset_file_name_map)
+    xml_asset_path = xml_asset[1]
+
+    new_asset_file_name_map = transform_code_files(
+        asset_file_name_map, output_dir, identifier
+    )
+
+    transform_xml(xml_asset_path, identifier)
+    return new_asset_file_name_map
+
+
+def transform_code_files(asset_file_name_map, output_dir, identifier):
+    "zip code files if they are not already a zip file"
+    # parse XML file
     xml_asset = parse.article_xml_asset(asset_file_name_map)
     xml_asset_path = xml_asset[1]
     root = parse.parse_article_xml(xml_asset_path)
 
-    code_files = code_file_list(root)
+    file_transformations = code_file_transformations(
+        root, asset_file_name_map, output_dir, identifier
+    )
+    code_file_zip(file_transformations, output_dir, identifier)
 
+    # create a new asset map
+    new_asset_file_name_map = transform_asset_file_name_map(
+        asset_file_name_map, file_transformations
+    )
+
+    xml_rewrite_file_tags(xml_asset_path, file_transformations, identifier)
+    return new_asset_file_name_map
+
+
+def code_file_transformations(root, asset_file_name_map, output_dir, identifier):
     # zip code files
+    code_files = code_file_list(root)
     file_transformations = []
     for file_data in code_files:
         code_file_name = file_data.get("upload_file_nm")
 
-        LOGGER.info("%s code_file_name: %s" % (zip_file_name, code_file_name))
+        LOGGER.info("%s code_file_name: %s", identifier, code_file_name)
         # collect file name data
         original_code_file_name, original_code_file_path = find_in_file_name_map(
             code_file_name, asset_file_name_map
@@ -53,39 +93,47 @@ def transform_ejp_zip(zip_file, tmp_dir, output_dir):
         from_file = ArticleZipFile(
             code_file_name, original_code_file_name, original_code_file_path
         )
-        LOGGER.info("%s from_file: %s" % (zip_file_name, from_file))
+        LOGGER.info("%s from_file: %s", identifier, from_file)
 
         to_file = zip_code_file(from_file, output_dir)
-        LOGGER.info("%s to_file: %s" % (zip_file_name, to_file))
+        LOGGER.info("%s to_file: %s", identifier, to_file)
 
         # save the from file to file transformation
         file_transformations.append((from_file, to_file))
+    return file_transformations
 
+
+def code_file_zip(file_transformations, output_dir, identifier):
+    for from_file, to_file in file_transformations:
+        LOGGER.info(
+            "%s zipping from_file: %s, to_file: %s", identifier, from_file, to_file
+        )
+        to_file = zip_code_file(from_file, output_dir)
+
+
+def xml_rewrite_file_tags(xml_asset_path, file_transformations, identifier):
+    root = parse.parse_article_xml(xml_asset_path)
     # rewrite the XML tags
-    LOGGER.info("%s rewriting xml tags" % zip_file_name)
+    LOGGER.info("%s rewriting xml tags", identifier)
     root = transform_xml_file_tags(root, file_transformations)
+    write_xml_file(root, xml_asset_path, identifier)
 
+
+def transform_xml(xml_asset_path, identifier):
+    "modify the XML"
     # remove history tags from XML for certain article types
+    root = parse.parse_article_xml(xml_asset_path)
     soup = parser.parse_document(xml_asset_path)
-    root = transform_xml_history_tags(root, soup, zip_file_name)
+    root = transform_xml_history_tags(root, soup, identifier)
+    write_xml_file(root, xml_asset_path, identifier)
 
+
+def write_xml_file(root, xml_asset_path, identifier):
     # write new XML file
     xml_string = xml_element_to_string(root)
-    LOGGER.info("%s writing xml to file %s" % (zip_file_name, xml_asset_path))
+    LOGGER.info("%s writing xml to file %s", identifier, xml_asset_path)
     with open(xml_asset_path, "w") as open_file:
         open_file.write(xml_string)
-
-    # create a new asset map
-    new_asset_file_name_map = transform_asset_file_name_map(
-        asset_file_name_map, file_transformations
-    )
-
-    # write new zip file
-    new_zip_file_path = os.path.join(output_dir, zip_file_name)
-    LOGGER.info("%s writing new zip file %s" % (zip_file_name, new_zip_file_path))
-    create_zip_from_file_map(new_zip_file_path, new_asset_file_name_map)
-
-    return new_zip_file_path
 
 
 def xml_element_to_string(root):
@@ -94,6 +142,7 @@ def xml_element_to_string(root):
 
 
 def code_file_list(root):
+    "get a list of code files from the file tags in the ElementTree"
     code_files = []
 
     files = parse.file_list(root)
@@ -112,6 +161,7 @@ def code_file_list(root):
 
 
 def find_in_file_name_map(file_name, file_name_map):
+    "find the item in the map matching the file_name"
     for asset_file_name, file_name_path in file_name_map.items():
         if file_name_path.endswith(file_name):
             return asset_file_name, file_name_path
@@ -154,14 +204,17 @@ def transform_xml_history_tags(root, soup, zip_file_name):
     article_type = parser.article_type(soup)
     display_channel_list = parser.display_channel(soup)
     LOGGER.info(
-        "%s article_type %s, display_channel %s"
-        % (zip_file_name, article_type, display_channel_list)
+        "%s article_type %s, display_channel %s",
+        zip_file_name,
+        article_type,
+        display_channel_list,
     )
+
     if article_type in ["correction", "editorial", "retraction"] or (
         article_type == "article-commentary"
         and "insight" in [value.lower() for value in display_channel_list if value]
     ):
-        LOGGER.info("%s transforming xml history tags" % zip_file_name)
+        LOGGER.info("%s transforming xml history tags", zip_file_name)
         # remove history tag
         for history_tag in root.findall("./front/article-meta/history"):
             root.find("./front/article-meta").remove(history_tag)
@@ -176,6 +229,14 @@ def transform_asset_file_name_map(asset_file_name_map, file_transformations):
             del new_asset_file_name_map[from_file.zip_name]
             new_asset_file_name_map[to_file.zip_name] = to_file.file_path
     return new_asset_file_name_map
+
+
+def rezip(asset_file_name_map, output_dir, zip_file_name):
+    "write new zip file"
+    new_zip_file_path = os.path.join(output_dir, zip_file_name)
+    LOGGER.info("%s writing new zip file %s", zip_file_name, new_zip_file_path)
+    create_zip_from_file_map(new_zip_file_path, asset_file_name_map)
+    return new_zip_file_path
 
 
 def create_zip_from_file_map(zip_path, file_name_map):

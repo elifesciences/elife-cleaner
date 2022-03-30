@@ -37,6 +37,22 @@ class TestTransform(unittest.TestCase):
         info_prefix = (
             "INFO elifecleaner:transform:transform_ejp_zip: %s"
         ) % zip_file_name
+        transform_info_prefix = (
+            "INFO elifecleaner:transform:code_file_transformations: %s"
+        ) % zip_file_name
+        code_file_zip_info_prefix = (
+            "INFO elifecleaner:transform:code_file_zip: %s"
+        ) % zip_file_name
+        rewrite_info_prefix = (
+            "INFO elifecleaner:transform:xml_rewrite_file_tags: %s"
+        ) % zip_file_name
+        write_info_prefix = (
+            "INFO elifecleaner:transform:write_xml_file: %s"
+        ) % zip_file_name
+        transform_history_prefix = (
+            "INFO elifecleaner:transform:transform_xml_history_tags: %s"
+        ) % zip_file_name
+        rezip_info_prefix = ("INFO elifecleaner:transform:rezip: %s") % zip_file_name
         expected_new_zip_file_path = os.path.join(self.output_dir, zip_file_name)
         new_zip_file_path = transform.transform_ejp_zip(
             zip_file, self.temp_dir, self.output_dir
@@ -51,7 +67,7 @@ class TestTransform(unittest.TestCase):
 
         self.assertEqual(
             log_file_lines[1],
-            "%s code_file_name: Figure 5source code 1.c\n" % info_prefix,
+            "%s code_file_name: Figure 5source code 1.c\n" % transform_info_prefix,
         )
         self.assertEqual(
             log_file_lines[2],
@@ -60,7 +76,7 @@ class TestTransform(unittest.TestCase):
                 ' "30-01-2019-RA-eLife-45644/Figure 5source code 1.c",'
                 ' "tests/tmp/30-01-2019-RA-eLife-45644/Figure 5source code 1.c")\n'
             )
-            % info_prefix,
+            % transform_info_prefix,
         )
 
         self.assertEqual(
@@ -70,13 +86,24 @@ class TestTransform(unittest.TestCase):
                 ' "30-01-2019-RA-eLife-45644/Figure 5source code 1.c.zip",'
                 ' "tests/tmp_output/Figure 5source code 1.c.zip")\n'
             )
-            % info_prefix,
+            % transform_info_prefix,
         )
-        self.assertEqual(log_file_lines[4], "%s rewriting xml tags\n" % info_prefix)
+        self.assertEqual(
+            log_file_lines[4],
+            (
+                '%s zipping from_file: ArticleZipFile("Figure 5source code 1.c", '
+                '"30-01-2019-RA-eLife-45644/Figure 5source code 1.c", '
+                '"tests/tmp/30-01-2019-RA-eLife-45644/Figure 5source code 1.c"), '
+                'to_file: ArticleZipFile("Figure 5source code 1.c.zip", '
+                '"30-01-2019-RA-eLife-45644/Figure 5source code 1.c.zip", '
+                '"tests/tmp_output/Figure 5source code 1.c.zip")\n'
+            )
+            % code_file_zip_info_prefix,
+        )
+
         self.assertEqual(
             log_file_lines[5],
-            "INFO elifecleaner:transform:transform_xml_history_tags: %s article_type research-article, display_channel ['Research Article']\n"
-            % zip_file_name,
+            ("%s rewriting xml tags\n") % rewrite_info_prefix,
         )
         self.assertEqual(
             log_file_lines[6],
@@ -84,15 +111,29 @@ class TestTransform(unittest.TestCase):
                 "%s writing xml to file"
                 " tests/tmp/30-01-2019-RA-eLife-45644/30-01-2019-RA-eLife-45644.xml\n"
             )
-            % info_prefix,
+            % write_info_prefix,
         )
+
         self.assertEqual(
             log_file_lines[7],
             (
-                "%s writing new zip file"
-                " tests/tmp_output/30-01-2019-RA-eLife-45644.zip\n"
+                "%s "
+                "article_type research-article, display_channel ['Research Article']\n"
             )
-            % info_prefix,
+            % transform_history_prefix,
+        )
+        self.assertEqual(
+            log_file_lines[8],
+            (
+                "%s writing xml to file"
+                " tests/tmp/30-01-2019-RA-eLife-45644/30-01-2019-RA-eLife-45644.xml\n"
+            )
+            % write_info_prefix,
+        )
+        self.assertEqual(
+            log_file_lines[9],
+            ("%s writing new zip file tests/tmp_output/30-01-2019-RA-eLife-45644.zip\n")
+            % rezip_info_prefix,
         )
         # check output directory contents
         output_dir_list = os.listdir(self.output_dir)
