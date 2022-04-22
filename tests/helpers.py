@@ -21,7 +21,7 @@ def fixture_module_name(folder_names, filename):
     return ".".join(folder_names + [filename.rstrip(".py")])
 
 
-def read_fixture(filename):
+def read_fixture(filename, mode="r"):
     folder_names = ["tests", "fixtures"]
     full_filename = os.path.join(os.sep.join(folder_names), filename)
     if full_filename.endswith(".py"):
@@ -36,5 +36,8 @@ def read_fixture(filename):
         )
         return mod.EXPECTED
     else:
-        with io.open(full_filename, mode="r", encoding="utf-8") as file_fp:
+        kwargs = {"mode": mode}
+        if mode == "r":
+            kwargs["encoding"] = "utf-8"
+        with io.open(full_filename, **kwargs) as file_fp:
             return file_fp.read()
