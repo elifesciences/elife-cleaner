@@ -296,6 +296,37 @@ def repair_article_xml(xml_string):
     return xml_string
 
 
+def xml_journal_id_values(root):
+    "parse journal-id tags from the XML ElementTree"
+    values = {}
+    for journal_id_tag in root.findall("./front/journal-meta/journal-id"):
+        if journal_id_tag.attrib.get("journal-id-type"):
+            values[journal_id_tag.attrib.get("journal-id-type")] = journal_id_tag.text
+    return values
+
+
+def xml_journal_title(root):
+    "parse the journal title from the XML ElementTree"
+    title = None
+    for journal_title_tag in root.findall(
+        "./front/journal-meta/journal-title-group/journal-title"
+    ):
+        title = journal_title_tag.text
+        break
+    return title
+
+
+def xml_publisher_name(root):
+    "parse the publisher name from the XML ElementTree"
+    name = None
+    for publisher_name_tag in root.findall(
+        "./front/journal-meta/publisher/publisher-name"
+    ):
+        name = publisher_name_tag.text
+        break
+    return name
+
+
 def file_list(root):
     file_list = []
     attribute_map = {

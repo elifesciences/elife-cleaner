@@ -283,6 +283,48 @@ class TestParseArticleXML(unittest.TestCase):
             parse.parse_article_xml(xml_file_path)
 
 
+class TestParseXML(unittest.TestCase):
+    def setUp(self):
+        xml_string = """<article>
+<front>
+  <journal-meta>
+    <journal-id journal-id-type="foo">bar</journal-id>
+    <journal-title-group>
+      <journal-title>eLife</journal-title>
+    </journal-title-group>
+    <publisher>
+        <publisher-name>eLife Sciences Publications, Ltd</publisher-name>
+    </publisher>
+  </journal-meta>
+</front>
+</article>"""
+        self.root = ElementTree.fromstring(xml_string)
+
+    def test_xml_journal_id_values(self):
+        id_values = parse.xml_journal_id_values(self.root)
+        self.assertEqual(id_values, {"foo": "bar"})
+
+    def test_xml_journal_id_values_none(self):
+        id_values = parse.xml_journal_id_values(ElementTree.fromstring("<article/>"))
+        self.assertEqual(id_values, {})
+
+    def test_xml_journal_title(self):
+        title = parse.xml_journal_title(self.root)
+        self.assertEqual(title, "eLife")
+
+    def test_xml_journal_title_none(self):
+        title = parse.xml_journal_title(ElementTree.fromstring("<article/>"))
+        self.assertEqual(title, None)
+
+    def test_xml_publisher_name(self):
+        name = parse.xml_publisher_name(self.root)
+        self.assertEqual(name, "eLife Sciences Publications, Ltd")
+
+    def test_xml_publisher_name_none(self):
+        name = parse.xml_publisher_name(ElementTree.fromstring("<article/>"))
+        self.assertEqual(name, None)
+
+
 class TestRepairArticleXml(unittest.TestCase):
     def test_malformed_xml(self):
         xml_string = "malformed xml"
