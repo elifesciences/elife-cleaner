@@ -174,7 +174,7 @@ class TestCheckEjpZip(unittest.TestCase):
         warning_prefix = (
             "WARNING elifecleaner:parse:check_missing_files_by_name: %s" % zip_file_name
         )
-        extra_file_prefix = "has file misisng from expected numeric sequence:"
+        extra_file_prefix = "has file missing from expected numeric sequence:"
         expected = [
             "%s %s Figure 2\n" % (warning_prefix, extra_file_prefix),
         ]
@@ -572,7 +572,7 @@ class TestCheckMissingFilesByName(unittest.TestCase):
         expected = [
             (
                 "WARNING elifecleaner:parse:check_missing_files_by_name: %s "
-                "has file misisng from expected numeric sequence: %s\n"
+                "has file missing from expected numeric sequence: %s\n"
             )
             % (identifier, missing_files[0])
         ]

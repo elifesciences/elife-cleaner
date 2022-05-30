@@ -139,7 +139,7 @@ def check_missing_files_by_name(files, identifier):
     missing_files_by_name = find_missing_files_by_name(files)
     for missing_file in missing_files_by_name:
         LOGGER.warning(
-            "%s has file misisng from expected numeric sequence: %s",
+            "%s has file missing from expected numeric sequence: %s",
             identifier,
             missing_file,
         )
