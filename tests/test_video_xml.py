@@ -1,5 +1,6 @@
 import unittest
 import os
+import sys
 import time
 import zipfile
 from collections import OrderedDict
@@ -102,15 +103,18 @@ class TestSetFront(unittest.TestCase):
 class TestBody(unittest.TestCase):
     def test_set_body(self):
         root = ElementTree.fromstring("<article/>")
-        expected = (
-            b"<article>"
-            b"<body>"
-            + (
+        media_tag_xml_string = (
+            b'<media xlink:href="elife-64719-video1.avi" id="video1" '
+            b'content-type="glencoe play-in-place height-250 width-310" mimetype="video" />'
+        )
+        if sys.version_info < (3, 8):
+            # pre Python 3.8 tag attributes are automatically alphabetised
+            media_tag_xml_string = (
                 b'<media content-type="glencoe play-in-place height-250 width-310" '
                 b'id="video1" mimetype="video" xlink:href="elife-64719-video1.avi" />'
             )
-            + b"</body>"
-            b"</article>"
+        expected = (
+            b"<article>" b"<body>" + media_tag_xml_string + b"</body>" b"</article>"
         )
         video_xml.set_body(root, VIDEO_DATA)
         xml_string = ElementTree.tostring(root, "utf-8")
@@ -143,6 +147,17 @@ class TestOutputXml(unittest.TestCase):
 class TestGenerateXml(unittest.TestCase):
     def setUp(self):
         self.temp_dir = "tests/tmp"
+        self.video_xml_64719 = read_fixture("video_xml_64719.xml", "rb")
+        if sys.version_info < (3, 8):
+            # pre Python 3.8 tag attributes are automatically alphabetised
+            self.video_xml_64719 = self.video_xml_64719.replace(
+                b'<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.1d1" article-type="research-article">',
+                b'<article article-type="research-article" dtd-version="1.1d1" xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink">',
+            )
+            self.video_xml_64719 = self.video_xml_64719.replace(
+                b'<media xlink:href="elife-64719-video1.avi" id="video1" content-type="glencoe play-in-place height-250 width-310" mimetype="video"/>',
+                b'<media content-type="glencoe play-in-place height-250 width-310" id="video1" mimetype="video" xlink:href="elife-64719-video1.avi"/>',
+            )
 
     def tearDown(self):
         delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
@@ -156,13 +171,11 @@ class TestGenerateXml(unittest.TestCase):
         with zipfile.ZipFile(zip_file, "r") as input_zipfile:
             input_zipfile.extract(xml_file_name, self.temp_dir)
         xml_string = video_xml.glencoe_xml(xml_file_path, VIDEO_DATA)
-        expected = read_fixture("video_xml_64719.xml", "rb")
-        self.assertEqual(xml_string, expected)
+        self.assertEqual(xml_string, self.video_xml_64719)
 
     @patch.object(time, "gmtime")
     def test_generate_xml(self, fake_gmtime):
         fake_gmtime.return_value = time.strptime("2022-04-19", "%Y-%m-%d")
         article = build_article("10.7554/eLife.64719", 64719)
         xml_string = video_xml.generate_xml(article, JOURNAL_DATA, VIDEO_DATA)
-        expected = read_fixture("video_xml_64719.xml", "rb")
-        self.assertEqual(xml_string, expected)
+        self.assertEqual(xml_string, self.video_xml_64719)

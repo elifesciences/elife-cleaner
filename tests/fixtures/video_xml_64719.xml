@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<article article-type="research-article" dtd-version="1.1d1" xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink">
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.1d1" article-type="research-article">
 <front>
 <journal-meta>
 <journal-id journal-id-type="nlm-ta">elife</journal-id>
@@ -22,6 +22,6 @@
 </article-meta>
 </front>
 <body>
-<media content-type="glencoe play-in-place height-250 width-310" id="video1" mimetype="video" xlink:href="elife-64719-video1.avi"/>
+<media xlink:href="elife-64719-video1.avi" id="video1" content-type="glencoe play-in-place height-250 width-310" mimetype="video"/>
 </body>
 </article>
