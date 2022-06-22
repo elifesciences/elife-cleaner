@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 import unittest
 import zipfile
 from xml.etree import ElementTree
@@ -223,14 +224,23 @@ class TestTransform(unittest.TestCase):
 
 class TestXmlElementToString(unittest.TestCase):
     def test_xml_element_to_string(self):
+        if sys.version_info < (3, 8):
+            # pre Python 3.8 tag attributes are automatically alphabetised
+            article_tag_xml_string = (
+                '<article article-type="research-article"'
+                ' xmlns:xlink="http://www.w3.org/1999/xlink">'
+            )
+        else:
+            article_tag_xml_string = (
+                '<article xmlns:xlink="http://www.w3.org/1999/xlink"'
+                ' article-type="research-article">'
+            )
         xml_string = (
-            '<article article-type="research-article"'
-            ' xmlns:xlink="http://www.w3.org/1999/xlink">'
-            "<front><article-meta><permissions>"
+            "%s<front><article-meta><permissions>"
             '<license license-type="open-access"'
             ' xlink:href="http://creativecommons.org/licenses/by/4.0/"/>'
             "</permissions></article-meta></front>"
-            "</article>"
+            "</article>" % article_tag_xml_string
         )
         root = ElementTree.fromstring(xml_string)
         expected = '<?xml version="1.0" ?>%s' % xml_string
