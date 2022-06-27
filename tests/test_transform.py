@@ -6,7 +6,7 @@ import zipfile
 from xml.etree import ElementTree
 from elifetools import parseJATS as parser
 from elifecleaner import LOGGER, configure_logging, transform
-from elifecleaner.transform import ArticleZipFile
+from elifecleaner.transform import ArticleZipFile, WELLCOME_FUNDING_STATEMENT
 from tests.helpers import delete_files_in_folder, read_fixture
 
 
@@ -124,7 +124,7 @@ class TestTransform(unittest.TestCase):
             % transform_history_prefix,
         )
         self.assertEqual(
-            log_file_lines[8],
+            log_file_lines[9],
             (
                 "%s writing xml to file"
                 " tests/tmp/30-01-2019-RA-eLife-45644/30-01-2019-RA-eLife-45644.xml\n"
@@ -132,7 +132,7 @@ class TestTransform(unittest.TestCase):
             % write_info_prefix,
         )
         self.assertEqual(
-            log_file_lines[9],
+            log_file_lines[10],
             ("%s writing new zip file tests/tmp_output/30-01-2019-RA-eLife-45644.zip\n")
             % rezip_info_prefix,
         )
@@ -410,6 +410,103 @@ class TestTransformXmlHistoryTags(unittest.TestCase):
             "</article>"
         )
         self.assertEqual(transform.xml_element_to_string(root_output), expected)
+
+
+class TestTransformXmlFunding(unittest.TestCase):
+    def setUp(self):
+        # XML prior to the funding-statement tag
+        self.xml_string_start = (
+            '<article article-type="research-article">'
+            "<front>"
+            "<article-meta>"
+            "<funding-group>"
+            "<award-group>"
+            "<principal-award-recipient>author-99706</principal-award-recipient>"
+            "<funding-source>Rosetrees Trust and Stoneygate Trust</funding-source>"
+            "<award-id/>"
+            "<principal-award-recipient>author-2458</principal-award-recipient>"
+            "<funding-source>Rosetrees Trust and Stoneygate Trust</funding-source>"
+            "<award-id/>"
+            "<principal-award-recipient>author-2458</principal-award-recipient>"
+            '<funding-source id="http://dx.doi.org/10.13039/100010269">Wellcome Trust (WT)</funding-source>'
+            "<award-id/>"
+            "<principal-award-recipient>author-2458</principal-award-recipient>"
+            "<funding-source>European Research Council</funding-source>"
+            "<award-id/>"
+        )
+
+        # XML following the funding-statement tag
+        self.xml_string_end = (
+            "</award-group>"
+            "</funding-group>"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+
+    def test_transform_xml_funding(self):
+        "test adding to the funding statement if a Wellcome funder is included"
+
+        # populate an ElementTree
+        funding_statement_xml = (
+            "<funding-statement>The funders had no role in study design, data collection and"
+            " interpretation, or the decision to submit the work for publication."
+            "</funding-statement>"
+        )
+        xml_string = "%s%s%s" % (
+            self.xml_string_start,
+            funding_statement_xml,
+            self.xml_string_end,
+        )
+
+        root = ElementTree.fromstring(xml_string)
+        # invoke the function
+        root_output = transform.transform_xml_funding(root, "test.zip")
+        # confirm XML root returned is modified
+        self.assertTrue(
+            WELLCOME_FUNDING_STATEMENT in transform.xml_element_to_string(root_output)
+        )
+
+    def test_transform_xml_funding_sentence_exists(self):
+        "test adding to the funding statement if a Wellcome funder is included"
+
+        # populate an ElementTree
+        funding_statement_xml = (
+            "<funding-statement>The funders had no role in study design, data collection and"
+            " interpretation, or the decision to submit the"
+            " work for publication. %s</funding-statement>" % WELLCOME_FUNDING_STATEMENT
+        )
+        xml_string = "%s%s%s" % (
+            self.xml_string_start,
+            funding_statement_xml,
+            self.xml_string_end,
+        )
+
+        root = ElementTree.fromstring(xml_string)
+        # invoke the function
+        root_output = transform.transform_xml_funding(root, "test.zip")
+        # confirm XML root returned is modified
+        self.assertTrue(
+            ("%s</funding-statement>" % WELLCOME_FUNDING_STATEMENT)
+            in transform.xml_element_to_string(root_output)
+        )
+
+    def test_transform_xml_funding_tag_missing(self):
+        "test if the funding-statement tag is missing"
+
+        # populate an ElementTree
+        xml_string = "%s%s" % (
+            self.xml_string_start,
+            self.xml_string_end,
+        )
+        root = ElementTree.fromstring(xml_string)
+        # invoke the function
+        root_output = transform.transform_xml_funding(root, "test.zip")
+        # confirm XML root returned is modified
+        self.assertTrue(
+            "<funding-statement>%s</funding-statement>" % WELLCOME_FUNDING_STATEMENT
+            in transform.xml_element_to_string(root_output)
+        )
 
 
 class TestTransformAssetFileNameMap(unittest.TestCase):
