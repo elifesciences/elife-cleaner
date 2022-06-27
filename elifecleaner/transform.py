@@ -1,9 +1,13 @@
 import copy
+from xml.etree.ElementTree import SubElement
 import os
 import zipfile
 from elifetools import xmlio
 from elifetools import parseJATS as parser
 from elifecleaner import LOGGER, parse, zip_lib
+
+
+WELLCOME_FUNDING_STATEMENT = "For the purpose of Open Access, the authors have applied a CC BY public copyright license to any Author Accepted Manuscript version arising from this submission."
 
 
 class ArticleZipFile:
@@ -125,6 +129,7 @@ def transform_xml(xml_asset_path, identifier):
     root = parse.parse_article_xml(xml_asset_path)
     soup = parser.parse_document(xml_asset_path)
     root = transform_xml_history_tags(root, soup, identifier)
+    root = transform_xml_funding(root, identifier)
     write_xml_file(root, xml_asset_path, identifier)
 
 
@@ -218,6 +223,77 @@ def transform_xml_history_tags(root, soup, zip_file_name):
         # remove history tag
         for history_tag in root.findall("./front/article-meta/history"):
             root.find("./front/article-meta").remove(history_tag)
+    return root
+
+
+def transform_xml_funding(root, zip_file_name):
+    "alter the content in the XML <funding-group> tags"
+    # get funder names
+    funding_sources = []
+    for funding_source_tag in root.findall(
+        ".//front/article-meta/funding-group/award-group/funding-source"
+    ):
+        funding_sources.append(funding_source_tag.text)
+    LOGGER.info(
+        "%s funding_sources %s",
+        zip_file_name,
+        funding_sources,
+    )
+    # look for Wellcome term
+    wellcome = bool(
+        [funding for funding in funding_sources if "wellcome" in funding.lower()]
+    )
+
+    add_funding_statement = False
+    funding_statement_tag = None
+    funding_statement = None
+
+    if wellcome is True:
+        # if Wellcome then look for funding-statement sentence
+        LOGGER.info(
+            "%s wellcome term found in funding_sources",
+            zip_file_name,
+        )
+
+        funding_statement_tag = root.find(
+            ".//front/article-meta/funding-group/award-group/funding-statement"
+        )
+
+        if funding_statement_tag:
+            # use the text from the first tag found only
+            funding_statement = funding_statement_tag.text
+        if WELLCOME_FUNDING_STATEMENT not in str(funding_statement):
+            add_funding_statement = True
+
+    # if the sentence is not in funding-statement, then add to the funding statement
+    if add_funding_statement:
+        if not funding_statement_tag:
+            # if no funding-statement tag is present, add it
+            LOGGER.info(
+                "%s adding a funding-statement tag to the first award-group tag",
+                zip_file_name,
+            )
+            first_award_group_tag = root.find(
+                ".//front/article-meta/funding-group/award-group"
+            )
+            if first_award_group_tag:
+                funding_statement_tag = SubElement(
+                    first_award_group_tag, "funding-statement"
+                )
+
+        # modify the funding-statement tag text
+        LOGGER.info(
+            "%s adding the WELLCOME_FUNDING_STATEMENT to the funding-statement",
+            zip_file_name,
+        )
+        funding_statement_tag.text = ". ".join(
+            [
+                part
+                for part in [funding_statement_tag.text, WELLCOME_FUNDING_STATEMENT]
+                if part
+            ]
+        )
+
     return root
 
 
