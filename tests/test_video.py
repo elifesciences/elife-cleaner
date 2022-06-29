@@ -340,6 +340,7 @@ class TestTermsFromTitle(unittest.TestCase):
             "- Video Supplement 6 "
             "- Videos Supplement 7 "
             "- Supplementary Video 8 "
+            "Figure-4-Video 2"
             "- Vidoe 9"
         )
         expected = [
@@ -350,6 +351,8 @@ class TestTermsFromTitle(unittest.TestCase):
             OrderedDict([("name", "video"), ("number", "6")]),
             OrderedDict([("name", "video"), ("number", "7")]),
             OrderedDict([("name", "video"), ("number", "8")]),
+            OrderedDict([("name", "fig"), ("number", "4")]),
+            OrderedDict([("name", "video"), ("number", "2")]),
         ]
 
         self.assertEqual(video.terms_from_title(title), expected)
