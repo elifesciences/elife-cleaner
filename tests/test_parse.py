@@ -635,6 +635,12 @@ class TestFindMissingFilesByName(unittest.TestCase):
         expected = ["Figure 2"]
         self.assertEqual(parse.find_missing_files_by_name(self.files), expected)
 
+    def test_find_missing_files_by_name_extra_whitespace(self):
+        "test pattern matching if there is whitespace"
+        self.files[1]["custom_meta"][0]["meta_value"] = "Figure  \t     3"
+        expected = ["Figure 2"]
+        self.assertEqual(parse.find_missing_files_by_name(self.files), expected)
+
     def test_find_file_detail_values_empty(self):
         files = []
         file_types = []

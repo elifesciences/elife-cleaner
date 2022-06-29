@@ -155,7 +155,7 @@ def find_missing_files_by_name(files):
         {
             "file_types": ["figure"],
             "meta_names": ["Title", "Figure number"],
-            "match_pattern": r"Figure (\d+)",
+            "match_pattern": r"Figure\s+(\d+)",
         }
     ]
     for match_rule in match_rules:
@@ -222,8 +222,10 @@ def find_missing_value_by_sequence(values, match_pattern):
         if prev_number:
             expected_number = prev_number + 1
         if expected_number and number > expected_number:
+            # remove whitespace match pattern
+            label_pattern = match_pattern.replace(r"\s+", " ")
             # replace (\d) from the match pattern to get a missing file name
-            label = label_match.sub(str(expected_number), match_pattern)
+            label = label_match.sub(str(expected_number), label_pattern)
             missing_files.append(label)
         prev_number = number
 
