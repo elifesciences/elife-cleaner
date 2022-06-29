@@ -88,8 +88,9 @@ def terms_from_title(title):
     # ignore the value if audio is in the title
     if IGNORE_TERM in title.lower():
         return []
-    # convert underscore to space for more lenient matching
-    title = title.replace("_", "")
+    # convert some punctuation to space for more lenient matching
+    for char in ["_", "-"]:
+        title = title.replace(char, " ")
     match_pattern = re.compile(r"(\D*?)(\d+)")
     for match in match_pattern.findall(title):
         section_term = match[0].lstrip(" -").strip().lower()
