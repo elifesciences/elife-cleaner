@@ -41,9 +41,13 @@ class TestCheckEjpZip(unittest.TestCase):
         delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
         parse.REPAIR_XML = self.original_repair_xml_value
 
+    @patch.object(parse, "check_art_file")
     @patch.object(pdf_utils, "pdf_image_pages")
     @patch.object(pdf_utils, "pdfimages_exists")
-    def test_check_ejp_zip(self, mock_pdfimages_exists, mock_pdf_image_pages):
+    def test_check_ejp_zip(
+        self, mock_pdfimages_exists, mock_pdf_image_pages, fake_check_art_file
+    ):
+        fake_check_art_file.return_value = True
         mock_pdfimages_exists.return_value = True
         mock_pdf_image_pages.return_value = {1, 2}
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
@@ -78,7 +82,9 @@ class TestCheckEjpZip(unittest.TestCase):
         log_file_lines = read_log_file_lines(self.log_file)
         self.assertTrue(log_file_lines[0].startswith("ERROR"))
 
-    def test_check_ejp_zip_missing_file(self):
+    @patch.object(parse, "check_art_file")
+    def test_check_ejp_zip_missing_file(self, fake_check_art_file):
+        fake_check_art_file.return_value = True
         zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
         # remove a file from a copy of the zip file for testing
         test_zip_file_name = os.path.join(self.temp_dir, "test_missing_file.zip")
@@ -106,7 +112,9 @@ class TestCheckEjpZip(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(read_log_file_lines(self.log_file), expected)
 
-    def test_check_ejp_zip_extra_file(self):
+    @patch.object(parse, "check_art_file")
+    def test_check_ejp_zip_extra_file(self, fake_check_art_file):
+        fake_check_art_file.return_value = True
         zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
         # alter the manifest XML in the zip file for testing
         test_zip_file_name = os.path.join(self.temp_dir, "test_missing_file.zip")
@@ -147,7 +155,9 @@ class TestCheckEjpZip(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(read_log_file_lines(self.log_file), expected)
 
-    def test_check_ejp_zip_missing_file_by_name(self):
+    @patch.object(parse, "check_art_file")
+    def test_check_ejp_zip_missing_file_by_name(self, fake_check_art_file):
+        fake_check_art_file.return_value = True
         zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
         # alter the manifest XML in the zip file for testing
         test_zip_file_name = os.path.join(self.temp_dir, "test_missing_file.zip")
@@ -722,3 +732,68 @@ class TestFindMissingFilesByName(unittest.TestCase):
         self.assertEqual(
             parse.find_missing_value_by_sequence(values, match_pattern), expected
         )
+
+
+class TestCheckArtFile(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_check_art_file(self):
+        "test for an acceptable file type will produce no warning"
+        identifier = "test.zip"
+        files = [
+            OrderedDict(
+                [
+                    ("file_type", "art_file"),
+                    ("upload_file_nm", "test.Docx"),
+                ]
+            )
+        ]
+        expected = []
+        parse.check_art_file(files, identifier)
+        self.assertEqual(read_log_file_lines(self.log_file), expected)
+
+    def test_check_art_file_bad_extension(self):
+        "test an unacceptable file type will produce a warning"
+        identifier = "test.zip"
+        files = [
+            OrderedDict(
+                [
+                    ("file_type", "art_file"),
+                    ("upload_file_nm", "test.pdf"),
+                ]
+            )
+        ]
+        expected = [
+            (
+                (
+                    "WARNING elifecleaner:parse:check_art_file: %s could not find a "
+                    "word or latex article file in the package\n"
+                )
+            )
+            % (identifier)
+        ]
+        parse.check_art_file(files, identifier)
+        self.assertEqual(read_log_file_lines(self.log_file), expected)
+
+    def test_check_art_file_missing(self):
+        "test if there is no art_file it will produce a warning"
+        identifier = "test.zip"
+        files = [OrderedDict()]
+        expected = [
+            (
+                (
+                    "WARNING elifecleaner:parse:check_art_file: %s could not find a "
+                    "word or latex article file in the package\n"
+                )
+            )
+            % (identifier)
+        ]
+        parse.check_art_file(files, identifier)
+        self.assertEqual(read_log_file_lines(self.log_file), expected)
