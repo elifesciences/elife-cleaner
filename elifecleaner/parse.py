@@ -11,6 +11,9 @@ from elifecleaner import LOGGER, pdf_utils, zip_lib
 # flag for whether to try and repair XML if it encounters a ParseError
 REPAIR_XML = True
 
+# acceptable file extensions for an art_file
+ART_FILE_EXTENSIONS = ["doc", "docx", "tex"]
+
 
 def check_ejp_zip(zip_file, tmp_dir):
     "check contents of ejp zip file"
@@ -34,6 +37,8 @@ def check_files(files, asset_file_name_map, identifier):
     extra_files = check_extra_files(files, asset_file_name_map, identifier)
     # check for out of sequence files by name
     check_missing_files_by_name(files, identifier)
+    # check the art file type
+    check_art_file(files, identifier)
     return True
 
 
@@ -230,6 +235,29 @@ def find_missing_value_by_sequence(values, match_pattern):
         prev_number = number
 
     return missing_files
+
+
+def check_art_file(files, identifier):
+    "check for an art file and it is an acceptable type"
+    art_files = [
+        file_data for file_data in files if file_data.get("file_type") == "art_file"
+    ]
+    file_extensions = [
+        file_data.get("upload_file_nm").rsplit(".", 1)[-1]
+        for file_data in art_files
+        if file_data.get("upload_file_nm")
+    ]
+    # convert values to lowercase when comparing
+    good_file_extensions = [
+        extension
+        for extension in file_extensions
+        if extension.lower() in ART_FILE_EXTENSIONS
+    ]
+    if not art_files or not good_file_extensions:
+        LOGGER.warning(
+            "%s could not find a word or latex article file in the package",
+            identifier,
+        )
 
 
 def article_xml_asset(asset_file_name_map):
