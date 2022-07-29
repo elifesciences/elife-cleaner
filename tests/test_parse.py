@@ -6,6 +6,7 @@ from xml.etree import ElementTree
 from mock import patch
 import wand
 from elifecleaner import LOGGER, configure_logging, parse, pdf_utils, zip_lib
+from elifecleaner.utils import CONTROL_CHARACTER_ENTITY_REPLACEMENT
 from tests.helpers import delete_files_in_folder, read_fixture
 
 
@@ -281,6 +282,19 @@ class TestParseArticleXML(unittest.TestCase):
         with open(xml_file_path, "w") as open_file:
             open_file.write("<article>&mdash;&lt;&gt;&amp;&quot;&beta;</article>")
         expected = b'<article>&#8212;&lt;&gt;&amp;"&#946;</article>'
+        root = parse.parse_article_xml(xml_file_path)
+        self.assertIsNotNone(root)
+        self.assertEqual(ElementTree.tostring(root), expected)
+
+    def test_parse_article_xml_control_character_entities(self):
+        xml_file_path = os.path.join(self.temp_dir, "test.xml")
+        with open(xml_file_path, "w") as open_file:
+            open_file.write(
+                "<article><title>To &#x001D;nd odd entities.</title></article>"
+            )
+        expected = b"<article><title>To %snd odd entities.</title></article>" % bytes(
+            CONTROL_CHARACTER_ENTITY_REPLACEMENT, encoding="utf-8"
+        )
         root = parse.parse_article_xml(xml_file_path)
         self.assertIsNotNone(root)
         self.assertEqual(ElementTree.tostring(root), expected)
