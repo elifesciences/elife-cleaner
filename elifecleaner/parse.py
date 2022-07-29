@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 import html
 from wand.image import Image
 from wand.exceptions import PolicyError, WandRuntimeError
-from elifecleaner import LOGGER, pdf_utils, zip_lib
+from elifecleaner import LOGGER, pdf_utils, utils, zip_lib
 
 
 # flag for whether to try and repair XML if it encounters a ParseError
@@ -281,6 +281,13 @@ def parse_article_xml(xml_file):
         xml_string = open_file.read()
         # unescape any HTML entities to avoid undefined entity XML exceptions later
         xml_string = html_entity_unescape(xml_string)
+        # fix XML-incompatible character entities
+        if utils.match_control_character_entities(xml_string):
+            LOGGER.info(
+                "Replacing character entities in the XML string: %s"
+                % utils.match_control_character_entities(xml_string)
+            )
+            xml_string = utils.replace_control_character_entities(xml_string)
         try:
             return ElementTree.fromstring(xml_string)
         except ElementTree.ParseError:
