@@ -7,16 +7,7 @@ from mock import patch
 import wand
 from elifecleaner import LOGGER, configure_logging, parse, pdf_utils, zip_lib
 from elifecleaner.utils import CONTROL_CHARACTER_ENTITY_REPLACEMENT
-from tests.helpers import delete_files_in_folder, read_fixture
-
-
-def read_log_file_lines(log_file_path):
-    "read log file lines as a list for using in test assertions"
-    log_file_lines = []
-    with open(log_file_path, "r") as open_file:
-        for line in open_file:
-            log_file_lines.append(line)
-    return log_file_lines
+from tests.helpers import delete_files_in_folder, read_fixture, read_log_file_lines
 
 
 class TestParse(unittest.TestCase):

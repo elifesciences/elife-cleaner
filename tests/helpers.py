@@ -41,3 +41,12 @@ def read_fixture(filename, mode="r"):
             kwargs["encoding"] = "utf-8"
         with io.open(full_filename, **kwargs) as file_fp:
             return file_fp.read()
+
+
+def read_log_file_lines(log_file_path):
+    "read log file lines as a list for using in test assertions"
+    log_file_lines = []
+    with open(log_file_path, "r") as open_file:
+        for line in open_file:
+            log_file_lines.append(line)
+    return log_file_lines
