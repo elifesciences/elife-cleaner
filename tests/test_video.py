@@ -1,6 +1,8 @@
+import os
 import unittest
 from collections import OrderedDict
-from elifecleaner import video
+from elifecleaner import configure_logging, video
+from tests.helpers import delete_files_in_folder, read_log_file_lines
 
 
 VIDEO_TITLE_EXAMPLES = [
@@ -286,27 +288,47 @@ class TestVideoDataFromFiles(unittest.TestCase):
         self.assertEqual(video.video_data_from_files(files, article_id), expected)
 
 
-class TestAllTerms(unittest.TestCase):
-    def test_all_terms(self):
-        titles = ["Figure 1 - Video 1", "Figure 1 - Video 2", "Appendix 2 Video 1"]
+class TestAllTermsMap(unittest.TestCase):
+    def test_all_terms_map(self):
+        video_data = [
+            OrderedDict(
+                [
+                    ("upload_file_nm", "Video 1.ogv"),
+                    ("title", "Figure 1 - Video 1"),
+                ]
+            ),
+            OrderedDict(
+                [
+                    ("upload_file_nm", "Video 2.mp4"),
+                    ("title", "Figure 1 - Video 2"),
+                ]
+            ),
+            OrderedDict(
+                [
+                    ("upload_file_nm", "Appendix 2 Video 1.mp4"),
+                    ("title", "Appendix 2 Video 1"),
+                ]
+            ),
+        ]
+
         expected = OrderedDict(
             [
                 (
-                    "Figure 1 - Video 1",
+                    "Video 1.ogv",
                     [
                         OrderedDict([("name", "fig"), ("number", "1")]),
                         OrderedDict([("name", "video"), ("number", "1")]),
                     ],
                 ),
                 (
-                    "Figure 1 - Video 2",
+                    "Video 2.mp4",
                     [
                         OrderedDict([("name", "fig"), ("number", "1")]),
                         OrderedDict([("name", "video"), ("number", "2")]),
                     ],
                 ),
                 (
-                    "Appendix 2 Video 1",
+                    "Appendix 2 Video 1.mp4",
                     [
                         OrderedDict([("name", "app"), ("number", "2")]),
                         OrderedDict([("name", "video"), ("number", "1")]),
@@ -314,19 +336,176 @@ class TestAllTerms(unittest.TestCase):
                 ),
             ]
         )
-        all_terms = video.all_terms(titles)
+        all_terms = video.all_terms_map(video_data)
         self.assertEqual(all_terms, expected, "got all_terms: %s" % all_terms)
 
-    def test_all_terms_duplicate(self):
+    def test_all_terms_map_duplicate(self):
         "check return value when there is a duplicate video file name"
-        titles = [
-            "Figure 1 - Video 2",
-            "Figure 1 - Supplementary Video 2",
-            "Figure 1 - Video 1",
+        video_data = [
+            OrderedDict(
+                [
+                    ("upload_file_nm", "Video 2.ogv"),
+                    ("title", "Figure 1 - Video 2"),
+                ]
+            ),
+            OrderedDict(
+                [
+                    ("upload_file_nm", "Supplementary Video 2.mp4"),
+                    ("title", "Figure 1 - Supplementary Video 2"),
+                ]
+            ),
+            OrderedDict(
+                [
+                    ("upload_file_nm", "Video 1.mp4"),
+                    ("title", "Figure 1 - Video 1"),
+                ]
+            ),
         ]
-        expected = None
-        all_terms = video.all_terms(titles)
+        # note the term values are now unique, the duplicate value is renumbered
+        expected = OrderedDict(
+            [
+                (
+                    "Video 2.ogv",
+                    [
+                        OrderedDict([("name", "fig"), ("number", "1")]),
+                        OrderedDict([("name", "video"), ("number", "2")]),
+                    ],
+                ),
+                (
+                    "Supplementary Video 2.mp4",
+                    [
+                        OrderedDict([("name", "fig"), ("number", "1")]),
+                        OrderedDict([("name", "video"), ("number", "3")]),
+                    ],
+                ),
+                (
+                    "Video 1.mp4",
+                    [
+                        OrderedDict([("name", "fig"), ("number", "1")]),
+                        OrderedDict([("name", "video"), ("number", "1")]),
+                    ],
+                ),
+            ]
+        )
+        all_terms = video.all_terms_map(video_data)
         self.assertEqual(all_terms, expected, "got all_terms: %s" % all_terms)
+
+
+class TestRenumberTermMap(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def tearDown(self):
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_renumber_term_map(self):
+        configure_logging(self.log_file)
+        term_map = OrderedDict(
+            [
+                (
+                    "Video 2.ogv",
+                    [
+                        OrderedDict([("name", "fig"), ("number", "1")]),
+                        OrderedDict([("name", "video"), ("number", "2")]),
+                    ],
+                ),
+                (
+                    "Supplementary Video 2.mp4",
+                    [
+                        OrderedDict([("name", "fig"), ("number", "1")]),
+                        OrderedDict([("name", "video"), ("number", "2")]),
+                    ],
+                ),
+                (
+                    "Video 1.mp4",
+                    [
+                        OrderedDict([("name", "fig"), ("number", "1")]),
+                        OrderedDict([("name", "video"), ("number", "1")]),
+                    ],
+                ),
+            ]
+        )
+        prefix_to_keys_map = {
+            "fig1video": ["Video 2.ogv", "Supplementary Video 2.mp4", "Video 1.mp4"]
+        }
+
+        expected = OrderedDict(
+            [
+                (
+                    "Video 2.ogv",
+                    [
+                        OrderedDict([("name", "fig"), ("number", "1")]),
+                        OrderedDict([("name", "video"), ("number", "2")]),
+                    ],
+                ),
+                (
+                    "Supplementary Video 2.mp4",
+                    [
+                        OrderedDict([("name", "fig"), ("number", "1")]),
+                        OrderedDict([("name", "video"), ("number", "3")]),
+                    ],
+                ),
+                (
+                    "Video 1.mp4",
+                    [
+                        OrderedDict([("name", "fig"), ("number", "1")]),
+                        OrderedDict([("name", "video"), ("number", "1")]),
+                    ],
+                ),
+            ]
+        )
+        info_prefix = "INFO elifecleaner:video:renumber_term_map:"
+        expected_log_file_line = (
+            "%s replacing number 2 with 3 for term Supplementary Video 2.mp4\n"
+            % info_prefix
+        )
+
+        new_term_map = video.renumber_term_map(term_map, prefix_to_keys_map)
+        self.assertEqual(new_term_map, expected)
+        self.assertEqual(read_log_file_lines(self.log_file)[-1], expected_log_file_line)
+
+
+class TestRenumberKeyMap(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def tearDown(self):
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_renumber_key_map(self):
+        configure_logging(self.log_file)
+        prefix = "fig1video"
+        key_map = OrderedDict(
+            [
+                ("Video 2.ogv", 2),
+                ("Supplementary Video 2.mp4", 2),
+                ("Video 1.mp4", 1),
+            ]
+        )
+
+        expected = OrderedDict(
+            [
+                ("Video 2.ogv", 2),
+                ("Supplementary Video 2.mp4", 3),
+                ("Video 1.mp4", 1),
+            ]
+        )
+        info_prefix = "INFO elifecleaner:video:renumber_key_map:"
+        expected_log_file_lines = [
+            "%s number values used for video prefix fig1video: [2, 2, 1]\n"
+            % info_prefix,
+            "%s duplicate number values for video prefix fig1video: [2]\n"
+            % info_prefix,
+            "%s replacement number values can be used for video prefix fig1video: [3]\n"
+            % info_prefix,
+        ]
+        new_key_map = video.renumber_key_map(prefix, key_map)
+        self.assertEqual(new_key_map, expected)
+        self.assertEqual(read_log_file_lines(self.log_file), expected_log_file_lines)
 
 
 class TestTermsFromTitle(unittest.TestCase):
