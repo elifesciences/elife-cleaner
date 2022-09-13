@@ -14,12 +14,6 @@ def profile_zip(file_name):
     return zip_asset_infos
 
 
-def unzip_file(open_zipfile, zip_file_info, output_path):
-    "read the zip_file_info from the open_zipfile and write to output_path"
-    with open(output_path, "wb") as output_file:
-        output_file.write(open_zipfile.read(zip_file_info))
-
-
 def unzip_zip(file_name, temp_dir):
     "unzip certain files and return the local paths"
     asset_file_name_map = OrderedDict()
@@ -37,7 +31,9 @@ def unzip_zip(file_name, temp_dir):
                 if not os.path.exists(folder_path):
                     os.mkdir(folder_path)
             asset_file_name = os.path.join(temp_dir, folder_name, file_name)
-            unzip_file(open_zipfile, zip_asset_info, asset_file_name)
+            # extract the file
+            open_zipfile.extract(zip_asset_info, path=temp_dir)
+            # record the file path in the map
             asset_file_name_map[zip_asset_info.filename] = asset_file_name
 
     return asset_file_name_map
