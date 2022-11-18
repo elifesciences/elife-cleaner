@@ -1,3 +1,4 @@
+import re
 from xml.etree.ElementTree import SubElement
 from elifecleaner import LOGGER
 
@@ -76,4 +77,34 @@ def add_prc_custom_meta_tags(root, identifier=None):
     meta_name_tag.text = "publishing-route"
     meta_value_tag = SubElement(custom_meta_tag, "meta-value")
     meta_value_tag.text = "prc"
+    return root
+
+
+ELOCATION_ID_MATCH_PATTERN = r"e(.*)"
+
+ELOCATION_ID_REPLACEMENT_PATTERN = r"RP\1"
+
+
+def transform_elocation_id(
+    root,
+    from_pattern=ELOCATION_ID_MATCH_PATTERN,
+    to_pattern=ELOCATION_ID_REPLACEMENT_PATTERN,
+    identifier=None,
+):
+    "change the elocation-id tag text value"
+    elocation_id_tag = root.find(".//front/article-meta/elocation-id")
+    if elocation_id_tag is not None:
+        match_pattern = re.compile(from_pattern)
+        new_elocation_id = match_pattern.sub(
+            to_pattern,
+            elocation_id_tag.text,
+        )
+        if new_elocation_id != elocation_id_tag.text:
+            LOGGER.info(
+                "%s changing elocation-id value %s to %s",
+                identifier,
+                elocation_id_tag.text,
+                new_elocation_id,
+            )
+            elocation_id_tag.text = new_elocation_id
     return root
