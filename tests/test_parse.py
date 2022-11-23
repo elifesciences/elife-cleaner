@@ -290,6 +290,19 @@ class TestParseArticleXML(unittest.TestCase):
         self.assertIsNotNone(root)
         self.assertEqual(ElementTree.tostring(root), expected)
 
+    def test_parse_article_xml_control_characters(self):
+        xml_file_path = os.path.join(self.temp_dir, "test.xml")
+        with open(xml_file_path, "w") as open_file:
+            open_file.write(
+                "<article><title>To %snd odd entities.</title></article>" % chr(29)
+            )
+        expected = b"<article><title>To %snd odd entities.</title></article>" % bytes(
+            CONTROL_CHARACTER_ENTITY_REPLACEMENT, encoding="utf-8"
+        )
+        root = parse.parse_article_xml(xml_file_path)
+        self.assertIsNotNone(root)
+        self.assertEqual(ElementTree.tostring(root), expected)
+
     def test_parse_article_xml_failure(self):
         xml_file_path = os.path.join(self.temp_dir, "test.xml")
         with open(xml_file_path, "w") as open_file:
