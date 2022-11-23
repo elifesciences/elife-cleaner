@@ -23,3 +23,17 @@ def replace_control_character_entities(string):
     "replace character entities of control characters in the string"
     match_pattern = re.compile(CONTROL_CHARACTER_ENTITY_MATCH_PATTERN)
     return match_pattern.sub(CONTROL_CHARACTER_ENTITY_REPLACEMENT, string)
+
+
+def match_control_characters(string):
+    "search the string for XML-incompatible control characters"
+    # char 9 is newline, 10 is tab, 13 is carriage return
+    allowed = [9, 10, 13]
+    return [char for char in string[:] if ord(char) <= 31 and ord(char) not in allowed]
+
+
+def replace_control_characters(string):
+    "replace control characters in the string"
+    for char in list(set(match_control_characters(string))):
+        string = string.replace(char, CONTROL_CHARACTER_ENTITY_REPLACEMENT)
+    return string
