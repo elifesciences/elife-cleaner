@@ -288,6 +288,13 @@ def parse_article_xml(xml_file):
                 % utils.match_control_character_entities(xml_string)
             )
             xml_string = utils.replace_control_character_entities(xml_string)
+        # also replace unescaped control characters
+        if utils.match_control_characters(xml_string):
+            LOGGER.info(
+                "Replacing control characters in the XML string (ASCII codes): %s"
+                % [ord(char) for char in utils.match_control_characters(xml_string)]
+            )
+            xml_string = utils.replace_control_characters(xml_string)
         try:
             return ElementTree.fromstring(xml_string)
         except ElementTree.ParseError:
