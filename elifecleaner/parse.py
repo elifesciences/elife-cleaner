@@ -460,3 +460,15 @@ def pdf_page_count(file_path):
             )
             raise
     return None
+
+
+def preprint_url(root):
+    "parse XML to find a preprint URL"
+    url = None
+    for fn_group_tag in root.findall(
+        './front/article-meta/fn-group[@content-type="article-history"]'
+    ):
+        ext_link_tag = fn_group_tag.find('./ext-link[@ext-link-type="url"]')
+        if ext_link_tag is not None:
+            url = ext_link_tag.get("{http://www.w3.org/1999/xlink}href")
+    return url
