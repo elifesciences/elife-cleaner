@@ -815,3 +815,44 @@ class TestCheckArtFile(unittest.TestCase):
         ]
         parse.check_art_file(files, identifier)
         self.assertEqual(read_log_file_lines(self.log_file), expected)
+
+
+class TestParsePreprintUrl(unittest.TestCase):
+    def test_preprint_url(self):
+        xml_string = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
+    <front>
+        <article-meta>
+            <fn-group content-type="article-history">
+                <title>Preprint</title>
+                <fn fn-type="other"/>
+                <ext-link ext-link-type="url" xlink:href="https://doi.org/10.1101/2021.06.02.446694"/>
+            </fn-group>
+        </article-meta>
+    </front>
+</article>"""
+        expected = "https://doi.org/10.1101/2021.06.02.446694"
+        root = ElementTree.fromstring(xml_string)
+        result = parse.preprint_url(root)
+        self.assertEqual(result, expected)
+
+    def test_preprint_url_no_article_meta(self):
+        xml_string = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
+    <front></front>
+</article>"""
+        expected = None
+        root = ElementTree.fromstring(xml_string)
+        result = parse.preprint_url(root)
+        self.assertEqual(result, expected)
+
+    def test_preprint_url_no_ext_link(self):
+        xml_string = """<article xmlns:xlink="http://www.w3.org/1999/xlink">
+    <front>
+        <article-meta>
+            <fn-group content-type="article-history"></fn-group>
+        </article-meta>
+    </front>
+</article>"""
+        expected = None
+        root = ElementTree.fromstring(xml_string)
+        result = parse.preprint_url(root)
+        self.assertEqual(result, expected)
