@@ -303,6 +303,16 @@ class TestParseArticleXML(unittest.TestCase):
         self.assertIsNotNone(root)
         self.assertEqual(ElementTree.tostring(root), expected)
 
+    def test_parse_article_xml_ampersand(self):
+        xml_file_path = os.path.join(self.temp_dir, "test.xml")
+        xml_string_pattern = "<article>And %s And &amp; &#8220;And&#8221;</article>"
+        with open(xml_file_path, "w") as open_file:
+            open_file.write(xml_string_pattern % "&")
+        expected = bytes(xml_string_pattern % "&amp;", encoding="utf-8")
+        root = parse.parse_article_xml(xml_file_path)
+        self.assertIsNotNone(root)
+        self.assertEqual(ElementTree.tostring(root), expected)
+
     def test_parse_article_xml_failure(self):
         xml_file_path = os.path.join(self.temp_dir, "test.xml")
         with open(xml_file_path, "w") as open_file:
