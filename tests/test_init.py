@@ -14,7 +14,8 @@ class TestInit(unittest.TestCase):
 
     def test_configure_logging(self):
         expected = "INFO elifecleaner:test_init:test_configure_logging: test_configure_logging\n"
-        configure_logging(self.log_file)
+        log_handler = configure_logging(self.log_file)
         LOGGER.info("test_configure_logging")
         with open(self.log_file, "r") as open_file:
             self.assertEqual(open_file.read(), expected)
+        LOGGER.removeHandler(log_handler)
