@@ -5,6 +5,7 @@ from xml.etree import ElementTree
 import html
 from wand.image import Image
 from wand.exceptions import PolicyError, WandRuntimeError
+from elifetools.utils import escape_ampersand
 from elifecleaner import LOGGER, pdf_utils, utils, zip_lib
 
 
@@ -299,6 +300,8 @@ def parse_article_xml(xml_file):
             return ElementTree.fromstring(xml_string)
         except ElementTree.ParseError:
             if REPAIR_XML:
+                # fix ampersands
+                xml_string = escape_ampersand(xml_string)
                 # try to repair the xml namespaces
                 xml_string = repair_article_xml(xml_string)
                 return ElementTree.fromstring(xml_string)
