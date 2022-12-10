@@ -14,6 +14,7 @@ setup(
     packages=["elifecleaner"],
     license="MIT",
     install_requires=[
+        "docmaptools",
         "elifetools",
         "elifearticle>=0.10.0",
         "jatsgenerator>=0.4.0",

@@ -5,6 +5,7 @@ from xml.etree import ElementTree
 import html
 from wand.image import Image
 from wand.exceptions import PolicyError, WandRuntimeError
+from elifearticle import parse as articleparse
 from elifetools.utils import escape_ampersand
 from elifecleaner import LOGGER, pdf_utils, utils, zip_lib
 
@@ -14,6 +15,11 @@ REPAIR_XML = True
 
 # acceptable file extensions for an art_file
 ART_FILE_EXTENSIONS = ["doc", "docx", "tex"]
+
+
+def article_from_xml(xml_file_path):
+    "parse using elifearticle library into an Article object"
+    return articleparse.build_article_from_xml(xml_file_path)
 
 
 def check_ejp_zip(zip_file, tmp_dir):
