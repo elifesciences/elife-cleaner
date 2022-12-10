@@ -2,7 +2,6 @@ import time
 from xml.dom import minidom
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
-from elifearticle import parse as articleparse
 from elifearticle.article import ArticleDate
 from elifecleaner import parse
 from elifecleaner.utils import pad_msid
@@ -17,10 +16,6 @@ NAMESPACE_MAP = {
 MEDIA_CONTENT_TYPE = "glencoe play-in-place height-250 width-310"
 
 DTD_VERSION = "1.1d1"
-
-
-def article_from_xml(xml_file_path):
-    return articleparse.build_article_from_xml(xml_file_path)
 
 
 def set_pub_date(parent, article, pub_type):
@@ -139,7 +134,7 @@ def generate_xml(article, journal_data, video_data, pretty=True, indent=""):
 def glencoe_xml(xml_file_path, video_data, pretty=True, indent=""):
     "generate XML to be submitted to Glencoe"
     # build an Article object from the XML
-    article, error_count = article_from_xml(xml_file_path)
+    article, error_count = parse.article_from_xml(xml_file_path)
     # collect journal data from the XML elementtree
     root = parse.parse_article_xml(xml_file_path)
     journal_ids = parse.xml_journal_id_values(root)
