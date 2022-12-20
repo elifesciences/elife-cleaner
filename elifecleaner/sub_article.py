@@ -86,9 +86,14 @@ def sub_article_data(docmap_string, article):
     return format_content_json(content_json, article)
 
 
+def sub_article_id(index):
+    "generate an id attribute for a sub article"
+    return "sa%s" % index
+
+
 def sub_article_doi(article_doi, index):
     "generate a DOI for a sub article"
-    return "%s.sa%s" % (article_doi, index)
+    return "%s.%s" % (article_doi, sub_article_id(index))
 
 
 def sub_article_contributors(article_object, sub_article_object):
@@ -117,6 +122,8 @@ def sub_article_contributors(article_object, sub_article_object):
 def build_sub_article_object(article_object, xml_root, content, index):
     # generate a DOI value and create an article object
     sub_article_object = Article(sub_article_doi(article_object.doi, index))
+    # set the article id
+    sub_article_object.id = sub_article_id(index)
     # set the article type
     sub_article_object.article_type = ARTICLE_TYPE_MAP.get(
         content.get("type"), content.get("type")

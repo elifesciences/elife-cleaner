@@ -260,6 +260,13 @@ class TestSubArticleData(unittest.TestCase):
         )
 
 
+class TestSubArticleId(unittest.TestCase):
+    def test_sub_article_id(self):
+        index = 0
+        expected = "sa0"
+        self.assertEqual(sub_article.sub_article_id(index), expected)
+
+
 class TestSubArticleDoi(unittest.TestCase):
     def test_sub_article_doi(self):
         article_doi = "10.7554/eLife.79713.1"
