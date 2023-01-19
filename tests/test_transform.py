@@ -411,6 +411,53 @@ class TestTransformXmlHistoryTags(unittest.TestCase):
         )
         self.assertEqual(transform.xml_element_to_string(root_output), expected)
 
+    def test_transform_xml_history_tags_prc_article(self):
+        "test removing history tag from a Publish Review Curate (PRC) article"
+        # populate an ElementTree
+        xml_string = (
+            '<article article-type="research-article">'
+            "<front>"
+            "<journal-meta>"
+            '<journal-id journal-id-type="nlm-ta">__not_elife__</journal-id>'
+            '<issn publication-format="electronic" pub-type="epub">2050-084X</issn>'
+            "</journal-meta>"
+            "<article-meta>"
+            "<article-categories>"
+            '<subj-group subj-group-type="display-channel">'
+            "<subject>Test</subject>"
+            "</subj-group>"
+            "</article-categories>"
+            "<history>"
+            "<date/>"
+            "</history>"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        root = ElementTree.fromstring(xml_string)
+        soup = parser.parse_xml(xml_string)
+        # invoke the function
+        root_output = transform.transform_xml_history_tags(root, soup, "test.zip")
+        # find the tag in the XML root returned which will have been altered
+        expected = (
+            '<?xml version="1.0" ?>'
+            '<article article-type="research-article">'
+            "<front>"
+            '<journal-meta><journal-id journal-id-type="nlm-ta">__not_elife__</journal-id>'
+            '<issn publication-format="electronic" pub-type="epub">2050-084X</issn>'
+            "</journal-meta>"
+            "<article-meta>"
+            "<article-categories>"
+            '<subj-group subj-group-type="display-channel">'
+            "<subject>Test</subject>"
+            "</subj-group>"
+            "</article-categories>"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        self.assertEqual(transform.xml_element_to_string(root_output), expected)
+
 
 class TestTransformXmlFunding(unittest.TestCase):
     def setUp(self):

@@ -4,7 +4,7 @@ import os
 import zipfile
 from elifetools import xmlio
 from elifetools import parseJATS as parser
-from elifecleaner import LOGGER, parse, zip_lib
+from elifecleaner import LOGGER, parse, prc, zip_lib
 
 
 WELLCOME_FUNDING_STATEMENT = "For the purpose of Open Access, the authors have applied a CC BY public copyright license to any Author Accepted Manuscript version arising from this submission."
@@ -215,9 +215,13 @@ def transform_xml_history_tags(root, soup, zip_file_name):
         display_channel_list,
     )
 
-    if article_type in ["correction", "editorial", "retraction"] or (
-        article_type == "article-commentary"
-        and "insight" in [value.lower() for value in display_channel_list if value]
+    if (
+        article_type in ["correction", "editorial", "retraction"]
+        or (
+            article_type == "article-commentary"
+            and "insight" in [value.lower() for value in display_channel_list if value]
+        )
+        or prc.is_xml_prc(root)
     ):
         LOGGER.info("%s transforming xml history tags", zip_file_name)
         # remove history tag
