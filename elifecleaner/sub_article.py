@@ -5,7 +5,7 @@ from xml.etree.ElementTree import Element, SubElement
 from elifearticle.article import Article, Contributor, Role
 from docmaptools import parse as docmap_parse
 from jatsgenerator import build
-from elifecleaner import LOGGER, parse
+from elifecleaner import assessment_terms, LOGGER, parse
 
 XML_NAMESPACES = {
     "ali": "http://www.niso.org/schemas/ali/1.0/",
@@ -154,6 +154,10 @@ def format_content_json(content_json, article_object):
         sub_article_object = build_sub_article_object(
             article_object, xml_root, content, index
         )
+
+        # if editor-report, extra formatting for the abstract
+        if sub_article_object.article_type == "editor-report":
+            assessment_terms.add_assessment_terms(xml_root)
 
         data.append(
             {
