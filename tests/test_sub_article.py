@@ -21,6 +21,7 @@ ARTICLE_TITLES = [
     b"Evaluation Summary: <italic>test</italic>",
     b"Reviewer #1 (Public Review):",
     b"Author Response:",
+    b"Consensus Public Review:",
 ]
 
 CONTENT_JSON = [
@@ -37,6 +38,11 @@ CONTENT_JSON = [
     {
         "type": "reply",
         "html": b"<p><strong>%s</strong></p><p>Test reply.</p>" % ARTICLE_TITLES[2],
+    },
+    {
+        "type": "review-article",
+        "html": b"<p><strong>%s</strong></p><p>Test consensus review article.</p>"
+        % ARTICLE_TITLES[3],
     },
 ]
 
@@ -212,7 +218,7 @@ class TestAddSubArticleXml(unittest.TestCase):
         docmap_string = read_fixture("2021.06.02.446694.docmap.json", mode="r")
         article_xml = os.path.join(self.temp_dir, xml_file_name)
         result = sub_article.add_sub_article_xml(docmap_string, article_xml)
-        self.assertEqual(len(result.findall(".//sub-article")), 3)
+        self.assertEqual(len(result.findall(".//sub-article")), 4)
         # For now assert each log file message appears, this may need adjustment later
         expected_log_file_lines = [
             "INFO elifecleaner:sub_article:add_sub_article_xml: Parsing article XML into root Element\n",
@@ -367,7 +373,7 @@ class TestFormatContentJson(unittest.TestCase):
         # invoke
         sub_article_data = sub_article.format_content_json(CONTENT_JSON, article)
         # assertions
-        self.assertEqual(len(sub_article_data), 3)
+        self.assertEqual(len(sub_article_data), 4)
         self.assertEqual(sorted(sub_article_data[0].keys()), ["article", "xml_root"])
         self.assertTrue(isinstance(sub_article_data[0].get("article"), Article))
         self.assertTrue(isinstance(sub_article_data[0].get("xml_root"), Element))
@@ -398,15 +404,28 @@ class TestFormatContentJson(unittest.TestCase):
             article_1.contributors[0].roles[0].specific_use,
             "referee",
         )
+
         # article 2
         article_2 = sub_article_data[2].get("article")
-        self.assertEqual(article_2.article_type, "author-comment")
+        self.assertEqual(article_2.article_type, "referee-report")
         # article 2 contributors
         self.assertEqual(len(article_2.contributors), 1)
         # article 2 contrib 0
-        self.assertEqual(article_2.contributors[0].roles[0].text, "Author")
+        self.assertEqual(article_2.contributors[0].roles[0].text, "Reviewer")
         self.assertEqual(
             article_2.contributors[0].roles[0].specific_use,
+            "referee",
+        )
+
+        # article 3
+        article_3 = sub_article_data[3].get("article")
+        self.assertEqual(article_3.article_type, "author-comment")
+        # article 3 contributors
+        self.assertEqual(len(article_3.contributors), 1)
+        # article 3 contrib 0
+        self.assertEqual(article_3.contributors[0].roles[0].text, "Author")
+        self.assertEqual(
+            article_3.contributors[0].roles[0].specific_use,
             "author",
         )
 
@@ -414,6 +433,55 @@ class TestFormatContentJson(unittest.TestCase):
         body_tag = sub_article_data[0].get("xml_root").find(".//body")
         self.assertIsNotNone(body_tag)
         self.assertEqual(body_tag.find("p").text, "Test evaluation summary.")
+
+    def test_editor_report(self):
+        "test editor-report example with specific terms in the abstract"
+        article_object = Article("10.7554/eLife.79713.1")
+        content_json = [
+            {
+                "type": "evaluation-summary",
+                "html": (
+                    b"<p><strong>eLife assessment</strong></p>"
+                    b"<p>Landmark convincing evaluation, "
+                    b"convincingly compelling if "
+                    b"incompletely.</p>"
+                ),
+            },
+        ]
+        expected_xml = (
+            b"<root>"
+            b"<front-stub>"
+            b"<title-group>"
+            b"<article-title>eLife assessment</article-title>"
+            b"</title-group>"
+            b'<kwd-group kwd-group-type="evidence-strength">'
+            b"<kwd>Compelling</kwd>"
+            b"<kwd>Convincing</kwd>"
+            b"<kwd>Incomplete</kwd>"
+            b"</kwd-group>"
+            b'<kwd-group kwd-group-type="claim-importance">'
+            b"<kwd>Landmark</kwd>"
+            b"</kwd-group>"
+            b"</front-stub>"
+            b"<body>"
+            b"<p><bold>Landmark</bold> <bold>convincing</bold> evaluation, "
+            b"<bold>convincingly</bold> <bold>compelling</bold> if "
+            b"<bold>incompletely</bold>.</p>"
+            b"</body>"
+            b"</root>"
+        )
+        sub_article_data = sub_article.format_content_json(content_json, article_object)
+        self.assertEqual(
+            sub_article_data[0].get("article").doi, "10.7554/eLife.79713.1.sa0"
+        )
+        self.assertEqual(sub_article_data[0].get("article").title, "eLife assessment")
+        self.assertEqual(
+            sub_article_data[0].get("article").article_type, "editor-report"
+        )
+        rough_xml_string = ElementTree.tostring(
+            sub_article_data[0].get("xml_root"), "utf-8"
+        )
+        self.assertEqual(rough_xml_string, expected_xml)
 
 
 class TestGenerate(unittest.TestCase):
