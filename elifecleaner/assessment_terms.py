@@ -58,11 +58,22 @@ def add_assessment_terms(root):
     "wrap specific terms with a bold tag in the body and add kwd tags"
     body_tag = root.find(".//body")
     if body_tag is not None:
+        # list of terms from the YAML file
+        terms = terms_from_yaml()
+
+        # find matched terms for adding kwd tags later on
+        matched_terms = []
+        xml_string = ElementTree.tostring(body_tag, encoding="utf-8")
+        for term in terms:
+            term_match_groups = term_matches(xml_string.decode("utf-8"), term)
+            for matched_term in term_match_groups:
+                matched_terms.append(matched_term)
+
+        # wrap terms with bold tags
         for tag_index, child_tag in enumerate(body_tag.iterfind("*")):
             # convert the tag to a string
             xml_string = ElementTree.tostring(child_tag, encoding="utf-8")
-            # list of terms from the YAML file
-            terms = terms_from_yaml()
+            # wrap terms with bold tag
             xml_string = xml_string_term_bold(xml_string.decode("utf-8"), terms)
             # convert the XML string back to an element
             new_child_tag = ElementTree.fromstring(xml_string)
@@ -71,14 +82,7 @@ def add_assessment_terms(root):
             # insert the new tag
             body_tag.insert(tag_index, new_child_tag)
 
-        terms = terms_from_yaml()
-        matched_terms = []
-        xml_string = ElementTree.tostring(body_tag, encoding="utf-8")
-        for term in terms:
-            term_match_groups = term_matches(xml_string.decode("utf-8"), term)
-            for matched_term in term_match_groups:
-                matched_terms.append(matched_term)
-
+        # add kwd-group and kwd tags
         terms_data = terms_data_by_terms(matched_terms)
 
         if terms_data:

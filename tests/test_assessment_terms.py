@@ -127,6 +127,40 @@ class TestAddAssessmentTerms(unittest.TestCase):
         # assert
         self.assertEqual(rough_xml_string, expected_xml)
 
+    def test_multiple_p_tags(self):
+        "test editor-report with multiple p tags in the abstract"
+        xml_root = ElementTree.fromstring(
+            b"<sub-article><front-stub><title-group>"
+            b"<article-title>eLife assessment</article-title>"
+            b"</title-group></front-stub>"
+            b"<body>"
+            b"<p>Landmark.</p>"
+            b"<p><bold>Important</bold>!</p>"
+            b"</body>"
+            b"</sub-article>"
+        )
+
+        expected_xml = (
+            b"<sub-article>"
+            b"<front-stub>"
+            b"<title-group><article-title>eLife assessment</article-title></title-group>"
+            b'<kwd-group kwd-group-type="claim-importance">'
+            b"<kwd>Important</kwd>"
+            b"<kwd>Landmark</kwd>"
+            b"</kwd-group>"
+            b"</front-stub>"
+            b"<body>"
+            b"<p><bold>Landmark</bold>.</p>"
+            b"<p><bold>Important</bold>!</p>"
+            b"</body>"
+            b"</sub-article>"
+        )
+
+        assessment_terms.add_assessment_terms(xml_root)
+        rough_xml_string = ElementTree.tostring(xml_root, "utf-8")
+        # assert
+        self.assertEqual(rough_xml_string, expected_xml)
+
     def test_non_p_tag(self):
         "test for a tag which is not a p tag"
         xml_string = (
