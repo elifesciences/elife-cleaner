@@ -445,6 +445,7 @@ class TestFormatContentJson(unittest.TestCase):
                     b"<p>Landmark convincing evaluation, "
                     b"convincingly compelling if "
                     b"incompletely.</p>"
+                    b"<p>And important.</p>"
                 ),
             },
         ]
@@ -460,6 +461,7 @@ class TestFormatContentJson(unittest.TestCase):
             b"<kwd>Incomplete</kwd>"
             b"</kwd-group>"
             b'<kwd-group kwd-group-type="claim-importance">'
+            b"<kwd>Important</kwd>"
             b"<kwd>Landmark</kwd>"
             b"</kwd-group>"
             b"</front-stub>"
@@ -467,6 +469,7 @@ class TestFormatContentJson(unittest.TestCase):
             b"<p><bold>Landmark</bold> <bold>convincing</bold> evaluation, "
             b"<bold>convincingly</bold> <bold>compelling</bold> if "
             b"<bold>incompletely</bold>.</p>"
+            b"<p>And <bold>important</bold>.</p>"
             b"</body>"
             b"</root>"
         )
