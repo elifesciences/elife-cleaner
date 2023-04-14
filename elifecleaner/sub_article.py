@@ -155,10 +155,6 @@ def format_content_json(content_json, article_object):
             article_object, xml_root, content, index
         )
 
-        # if editor-report, extra formatting for the abstract
-        if sub_article_object.article_type == "editor-report":
-            assessment_terms.add_assessment_terms(xml_root)
-
         data.append(
             {
                 "article": sub_article_object,
@@ -196,6 +192,10 @@ def generate(data, root_tag="article"):
         body_tag = sub_article_root.find("body")
         if body_tag is not None:
             sub_article_tag.append(body_tag)
+
+        # if editor-report, extra formatting for the abstract
+        if article.article_type == "editor-report":
+            assessment_terms.add_assessment_terms(sub_article_tag)
 
     # repair namespaces
     repair_namespaces(root)

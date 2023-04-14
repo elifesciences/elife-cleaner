@@ -434,58 +434,6 @@ class TestFormatContentJson(unittest.TestCase):
         self.assertIsNotNone(body_tag)
         self.assertEqual(body_tag.find("p").text, "Test evaluation summary.")
 
-    def test_editor_report(self):
-        "test editor-report example with specific terms in the abstract"
-        article_object = Article("10.7554/eLife.79713.1")
-        content_json = [
-            {
-                "type": "evaluation-summary",
-                "html": (
-                    b"<p><strong>eLife assessment</strong></p>"
-                    b"<p>Landmark convincing evaluation, "
-                    b"convincingly compelling if "
-                    b"incompletely.</p>"
-                    b"<p>And important.</p>"
-                ),
-            },
-        ]
-        expected_xml = (
-            b"<root>"
-            b"<front-stub>"
-            b"<title-group>"
-            b"<article-title>eLife assessment</article-title>"
-            b"</title-group>"
-            b'<kwd-group kwd-group-type="evidence-strength">'
-            b"<kwd>Compelling</kwd>"
-            b"<kwd>Convincing</kwd>"
-            b"<kwd>Incomplete</kwd>"
-            b"</kwd-group>"
-            b'<kwd-group kwd-group-type="claim-importance">'
-            b"<kwd>Important</kwd>"
-            b"<kwd>Landmark</kwd>"
-            b"</kwd-group>"
-            b"</front-stub>"
-            b"<body>"
-            b"<p><bold>Landmark</bold> <bold>convincing</bold> evaluation, "
-            b"<bold>convincingly</bold> <bold>compelling</bold> if "
-            b"<bold>incompletely</bold>.</p>"
-            b"<p>And <bold>important</bold>.</p>"
-            b"</body>"
-            b"</root>"
-        )
-        sub_article_data = sub_article.format_content_json(content_json, article_object)
-        self.assertEqual(
-            sub_article_data[0].get("article").doi, "10.7554/eLife.79713.1.sa0"
-        )
-        self.assertEqual(sub_article_data[0].get("article").title, "eLife assessment")
-        self.assertEqual(
-            sub_article_data[0].get("article").article_type, "editor-report"
-        )
-        rough_xml_string = ElementTree.tostring(
-            sub_article_data[0].get("xml_root"), "utf-8"
-        )
-        self.assertEqual(rough_xml_string, expected_xml)
-
 
 class TestGenerate(unittest.TestCase):
     def test_generate(self):
@@ -550,3 +498,56 @@ class TestGenerate(unittest.TestCase):
         pretty_xml_string = reparsed.toprettyxml(indent="  ", encoding="utf-8")
 
         self.assertEqual(pretty_xml_string, expected)
+
+    def test_editor_report(self):
+        "test editor-report example with specific terms in the abstract"
+        editor_report_article = Article("10.7554/eLife.79713.1")
+        editor_report_article.article_type = "editor-report"
+        editor_report_article.title = "eLife assessment"
+        editor_report_xml_string = (
+            "<root>"
+            "<body>"
+            "<p><strong>eLife assessment</strong></p>"
+            "<p>Landmark convincing evaluation, "
+            "convincingly compelling if "
+            "incompletely.</p>"
+            "<p>And important.</p>"
+            "</body></root>"
+        )
+        editor_report_sub_article_root = ElementTree.fromstring(
+            editor_report_xml_string
+        )
+        # assemble sub article data
+        sub_article_1 = {
+            "article": editor_report_article,
+            "xml_root": editor_report_sub_article_root,
+        }
+
+        root = sub_article.generate([sub_article_1])
+        expected = (
+            b'<article><sub-article article-type="editor-report">'
+            b"<front-stub>"
+            b'<article-id pub-id-type="doi">10.7554/eLife.79713.1</article-id>'
+            b"<title-group><article-title>eLife assessment</article-title></title-group>"
+            b'<kwd-group kwd-group-type="evidence-strength">'
+            b"<kwd>Compelling</kwd>"
+            b"<kwd>Convincing</kwd>"
+            b"<kwd>Incomplete</kwd>"
+            b"</kwd-group>"
+            b'<kwd-group kwd-group-type="claim-importance">'
+            b"<kwd>Important</kwd>"
+            b"<kwd>Landmark</kwd>"
+            b"</kwd-group>"
+            b"</front-stub>"
+            b"<body>"
+            b"<p><strong>eLife assessment</strong></p>"
+            b"<p><bold>Landmark</bold> <bold>convincing</bold> evaluation, "
+            b"<bold>convincingly</bold> <bold>compelling</bold> if "
+            b"<bold>incompletely</bold>.</p>"
+            b"<p>And <bold>important</bold>.</p>"
+            b"</body>"
+            b"</sub-article>"
+            b"</article>"
+        )
+        rough_xml_string = ElementTree.tostring(root, "utf-8")
+        self.assertEqual(rough_xml_string, expected)
