@@ -1,6 +1,7 @@
 import os
 import unittest
 from xml.etree import ElementTree
+import json
 from elifecleaner import LOGGER, configure_logging, prc
 from tests.helpers import delete_files_in_folder
 
@@ -195,3 +196,218 @@ class TestTransformElocationId(unittest.TestCase):
         root = ElementTree.fromstring(xml_string)
         root_output = prc.transform_elocation_id(root)
         self.assertEqual(ElementTree.tostring(root_output), expected)
+
+
+def docmap_test_data(doi=None):
+    "generate a docmap json test fixture"
+    docmap_json = {
+        "first-step": "_:b0",
+        "steps": {
+            "_:b0": {"next-step": "_:b1"},
+            "_:b1": {
+                "actions": [
+                    {
+                        "outputs": [
+                            {
+                                "type": "preprint",
+                                "identifier": "85111",
+                                "versionIdentifier": "2",
+                            }
+                        ]
+                    },
+                ]
+            },
+        },
+    }
+    if doi:
+        # add doi key and value to the outputs
+        docmap_json["steps"]["_:b1"]["actions"][0]["outputs"][0]["doi"] = doi
+    return docmap_json
+
+
+class TestVersionDoiFromDocmap(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+        self.identifier = "test.zip"
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_version_doi_from_docmap(self):
+        "test for when a doi is found"
+        doi = "10.7554/eLife.85111.2"
+        docmap_json = docmap_test_data(doi)
+        result = prc.version_doi_from_docmap(json.dumps(docmap_json), self.identifier)
+        self.assertEqual(result, doi)
+
+    def test_docmap_is_none(self):
+        "test for no docmap"
+        docmap_json = {}
+        result = prc.version_doi_from_docmap(json.dumps(docmap_json), self.identifier)
+        self.assertEqual(result, None)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:version_doi_from_docmap: "
+                    "%s parsing docmap returned None\n"
+                )
+                % self.identifier,
+            )
+
+    def test_no_preprint_in_docmap(self):
+        "test for doi is not present"
+        docmap_json = docmap_test_data(None)
+        # delete the step holding the preprint data
+        del docmap_json["steps"]["_:b1"]
+        result = prc.version_doi_from_docmap(json.dumps(docmap_json), self.identifier)
+        self.assertEqual(result, None)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:version_doi_from_docmap: "
+                    "%s no preprint data was found in the docmap\n"
+                )
+                % self.identifier,
+            )
+
+    def test_no_doi_key_in_docmap(self):
+        "test for doi is not present"
+        docmap_json = docmap_test_data(None)
+        result = prc.version_doi_from_docmap(json.dumps(docmap_json), self.identifier)
+        self.assertEqual(result, None)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:version_doi_from_docmap: "
+                    "%s did not find doi data in the docmap preprint data\n"
+                )
+                % self.identifier,
+            )
+
+
+class TestNextVersionDoi(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+        self.identifier = "test.zip"
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_next_version_doi(self):
+        doi = "10.7554/eLife.85111.2"
+        expected = "10.7554/eLife.85111.3"
+        result = prc.next_version_doi(doi, self.identifier)
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "INFO elifecleaner:prc:next_version_doi: "
+                    "%s next version doi, from DOI %s, next DOI %s\n"
+                )
+                % (self.identifier, doi, expected),
+            )
+
+    def test_non_int_version(self):
+        "non-int version value at the end"
+        version = "sa1"
+        doi = "10.7554/eLife.85111.2.%s" % version
+        expected = None
+        result = prc.next_version_doi(doi, self.identifier)
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:next_version_doi: "
+                    "%s version from DOI could not be converted to int, version %s\n"
+                )
+                % (self.identifier, version),
+            )
+
+    def test_version_exceeds_limit(self):
+        "non-int version value at the end"
+        article_id = "85111"
+        doi = "10.7554/eLife.%s" % article_id
+        expected = None
+        result = prc.next_version_doi(doi, self.identifier)
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:next_version_doi: "
+                    "%s failed to determine the version from DOI, "
+                    "version %s exceeds MAX_VERSION %s\n"
+                )
+                % (self.identifier, article_id, prc.MAX_VERSION),
+            )
+
+    def test_none(self):
+        "non-int version value at the end"
+        doi = None
+        expected = None
+        result = prc.next_version_doi(doi, self.identifier)
+        self.assertEqual(result, expected)
+
+
+class TestAddVersionDoi(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+        self.doi = "10.7554/eLife.1234567890.5"
+        self.identifier = "test.zip"
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_add_version_doi(self):
+        xml_string = "<article><front><article-meta /></front></article>"
+        root = ElementTree.fromstring(xml_string)
+        expected = (
+            b"<article>"
+            b"<front>"
+            b"<article-meta>"
+            b'<article-id pub-id-type="doi" specific-use="version">'
+            b"10.7554/eLife.1234567890.5"
+            b"</article-id>"
+            b"</article-meta>"
+            b"</front>"
+            b"</article>"
+        )
+        root_output = prc.add_version_doi(root, self.doi, self.identifier)
+        self.assertEqual(ElementTree.tostring(root_output), expected)
+
+    def test_no_article_meta(self):
+        "test if no article-meta tag is in the XML"
+        xml_string = "<article />"
+        root = ElementTree.fromstring(xml_string)
+        expected = bytes(xml_string, encoding="utf-8")
+        root_output = prc.add_version_doi(root, self.doi, self.identifier)
+        self.assertEqual(ElementTree.tostring(root_output), expected)
+        with open(self.log_file, "r") as open_file:
+            self.assertEqual(
+                open_file.read(),
+                (
+                    "WARNING elifecleaner:prc:add_version_doi: "
+                    "%s article-meta tag not found\n"
+                )
+                % self.identifier,
+            )
