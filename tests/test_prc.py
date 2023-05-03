@@ -395,6 +395,35 @@ class TestAddVersionDoi(unittest.TestCase):
         root_output = prc.add_version_doi(root, self.doi, self.identifier)
         self.assertEqual(ElementTree.tostring(root_output), expected)
 
+    def test_add_version_doi_in_order(self):
+        "test the new article-id tag is added in a particular order"
+        xml_string = (
+            "<article>"
+            "<front>"
+            "<article-meta>"
+            "<article-id />"
+            "<open-access>YES</open-access>"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        root = ElementTree.fromstring(xml_string)
+        expected = (
+            b"<article>"
+            b"<front>"
+            b"<article-meta>"
+            b"<article-id />"
+            b'<article-id pub-id-type="doi" specific-use="version">'
+            b"10.7554/eLife.1234567890.5"
+            b"</article-id>"
+            b"<open-access>YES</open-access>"
+            b"</article-meta>"
+            b"</front>"
+            b"</article>"
+        )
+        root_output = prc.add_version_doi(root, self.doi, self.identifier)
+        self.assertEqual(ElementTree.tostring(root_output), expected)
+
     def test_no_article_meta(self):
         "test if no article-meta tag is in the XML"
         xml_string = "<article />"
