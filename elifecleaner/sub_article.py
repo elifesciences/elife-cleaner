@@ -96,11 +96,16 @@ def sub_article_doi(article_doi, index):
     return "%s.%s" % (article_doi, sub_article_id(index))
 
 
+EDITOR_REPORT_CONTRIB_TYPES = ["editor"]
+
+
 def sub_article_contributors(article_object, sub_article_object):
     "add contributors to the sub-article from the parent article depending on the article type"
     if sub_article_object.article_type == "editor-report":
         # add editors of the article as authors of the sub-article
         for editor in article_object.editors:
+            if editor.contrib_type not in EDITOR_REPORT_CONTRIB_TYPES:
+                continue
             author = copy.copy(editor)
             author.contrib_type = "author"
             if not author.roles:

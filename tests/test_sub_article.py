@@ -293,6 +293,9 @@ class TestSubArticleContributors(unittest.TestCase):
         self.article_object.contributors.append(author)
         editor = Contributor("editor", "Itor", "Ed")
         self.article_object.editors.append(editor)
+        # reviewer contrib_type will not be added to an editor-report
+        reviewer = Contributor("reviewer", "Ewer", "Revi")
+        self.article_object.editors.append(reviewer)
 
     def test_editor_report(self):
         "test editor-report article type"
