@@ -1,5 +1,5 @@
 import re
-from xml.etree.ElementTree import SubElement
+from xml.etree.ElementTree import Element, SubElement
 from docmaptools import parse as docmap_parse
 from elifecleaner import LOGGER
 
@@ -187,8 +187,14 @@ def add_version_doi(root, doi, identifier=None):
         )
         return root
     # add article-id tag
-    article_id_tag = SubElement(article_meta_tag, "article-id")
+    article_id_tag = Element("article-id")
     article_id_tag.set("pub-id-type", "doi")
     article_id_tag.set("specific-use", "version")
     article_id_tag.text = doi
+    # insert the new tag into the XML after the last article-id tag
+    insert_index = 1
+    for tag_index, tag in enumerate(article_meta_tag.findall("*")):
+        if tag.tag == "article-id":
+            insert_index = tag_index + 1
+    article_meta_tag.insert(insert_index, article_id_tag)
     return root
