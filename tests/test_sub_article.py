@@ -334,7 +334,8 @@ class TestSubArticleContributors(unittest.TestCase):
 class TestBuildSubArticleObject(unittest.TestCase):
     def test_build_sub_article_object(self):
         "test review-article example"
-        article_object = Article("10.7554/eLife.79713.1")
+        article_object = Article("10.7554/eLife.79713")
+        article_object.version_doi = "10.7554/eLife.79713.1"
         xml_root = ElementTree.fromstring(
             b"<article><front-stub><title-group>"
             b"<article-title>Title</article-title>"
@@ -351,14 +352,14 @@ class TestBuildSubArticleObject(unittest.TestCase):
 
     def test_minimal(self):
         "test minimal, incomplete, arguments supplied"
-        article_object = Article("10.7554/eLife.79713.1")
+        article_object = Article("10.7554/eLife.79713")
         xml_root = Element("root")
         content = {}
         index = 0
         sub_article_object = sub_article.build_sub_article_object(
             article_object, xml_root, content, index
         )
-        self.assertEqual(sub_article_object.doi, "10.7554/eLife.79713.1.sa0")
+        self.assertEqual(sub_article_object.doi, "10.7554/eLife.79713.sa0")
         self.assertEqual(sub_article_object.title, None)
         self.assertEqual(len(sub_article_object.contributors), 0)
 

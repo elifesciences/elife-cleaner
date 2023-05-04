@@ -126,7 +126,11 @@ def sub_article_contributors(article_object, sub_article_object):
 
 def build_sub_article_object(article_object, xml_root, content, index):
     # generate a DOI value and create an article object
-    sub_article_object = Article(sub_article_doi(article_object.doi, index))
+    if article_object.version_doi:
+        doi_base = article_object.version_doi
+    else:
+        doi_base = article_object.doi
+    sub_article_object = Article(sub_article_doi(doi_base, index))
     # set the article id
     sub_article_object.id = sub_article_id(index)
     # set the article type
