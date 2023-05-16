@@ -25,6 +25,7 @@ ARTICLE_TITLES = [
 ]
 
 CONTENT_JSON = [
+    {"type": "preprint"},
     {
         "type": "evaluation-summary",
         "html": b"<p><strong>%s</strong></p><p>Test evaluation summary.</p>"

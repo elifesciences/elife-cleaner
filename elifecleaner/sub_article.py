@@ -154,6 +154,8 @@ def format_content_json(content_json, article_object):
     data = []
     # parse html to xml
     content_json = docmap_parse.transform_docmap_content(content_json)
+    # only keep items which have html
+    content_json = [content for content in content_json if content.get("html")]
     # reorder the articles
     content_json = reorder_content_json(content_json)
     # create an article for each
