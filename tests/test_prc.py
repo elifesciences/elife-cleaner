@@ -28,11 +28,11 @@ PRC_XML = (
     '<journal-id journal-id-type="hwp">foo</journal-id>'
     '<journal-id journal-id-type="publisher-id">foo</journal-id>'
     "<journal-title-group>"
-    "<journal-title>eLife</journal-title>"
+    "<journal-title>eLife Reviewed Preprints </journal-title>"
     "</journal-title-group>"
     '<issn pub-type="epub">2050-084X</issn>'
     "<publisher>"
-    "<publisher-name>eLife Sciences Publications, Ltd</publisher-name>"
+    "<publisher-name>elife-rp Sciences Publications, Ltd</publisher-name>"
     "</publisher>"
     "</journal-meta></front></article>"
 )
@@ -74,7 +74,19 @@ class TestTransformJournalIdTags(unittest.TestCase):
         # invoke the function
         root_output = prc.transform_journal_id_tags(root, identifier)
         # assertions
-        self.assertEqual(ElementTree.tostring(root_output), expected)
+        self.assertTrue(
+            b'<journal-id journal-id-type="nlm-ta">elife</journal-id>'
+            in ElementTree.tostring(root_output)
+        )
+        self.assertTrue(
+            b'<journal-id journal-id-type="hwp">eLife</journal-id>'
+            in ElementTree.tostring(root_output)
+        )
+        self.assertTrue(
+            b'<journal-id journal-id-type="publisher-id">eLife</journal-id>'
+            in ElementTree.tostring(root_output)
+        )
+
         log_file_lines = []
         with open(self.log_file, "r") as open_file:
             for line in open_file:
@@ -92,6 +104,84 @@ class TestTransformJournalIdTags(unittest.TestCase):
                 )
                 % (identifier, journal_id_type, tag_text),
             )
+
+
+class TestTransformJournalTitleTag(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_journal_title(self):
+        # populate an ElementTree
+        identifier = "test.zip"
+        xml_string = PRC_XML
+        tag_text = "eLife"
+        root = ElementTree.fromstring(xml_string)
+        # invoke the function
+        root_output = prc.transform_journal_title_tag(root, identifier)
+        # assertions
+        self.assertTrue(
+            b"<journal-title>%s</journal-title>" % bytes(tag_text, encoding="utf-8")
+            in ElementTree.tostring(root_output)
+        )
+        log_file_lines = []
+        with open(self.log_file, "r") as open_file:
+            for line in open_file:
+                log_file_lines.append(line)
+        self.assertEqual(
+            log_file_lines[-1],
+            (
+                (
+                    "INFO elifecleaner:prc:transform_journal_meta_tag: "
+                    "%s replacing journal-title tag text to %s\n"
+                )
+            )
+            % (identifier, tag_text),
+        )
+
+
+class TestTransformPublisherNameTag(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_publisher_name(self):
+        # populate an ElementTree
+        identifier = "test.zip"
+        xml_string = PRC_XML
+        tag_text = "eLife Sciences Publications, Ltd"
+        root = ElementTree.fromstring(xml_string)
+        # invoke the function
+        root_output = prc.transform_publisher_name_tag(root, identifier)
+        # assertions
+        self.assertTrue(
+            b"<publisher-name>%s</publisher-name>" % bytes(tag_text, encoding="utf-8")
+            in ElementTree.tostring(root_output)
+        )
+        log_file_lines = []
+        with open(self.log_file, "r") as open_file:
+            for line in open_file:
+                log_file_lines.append(line)
+        self.assertEqual(
+            log_file_lines[-1],
+            (
+                (
+                    "INFO elifecleaner:prc:transform_journal_meta_tag: "
+                    "%s replacing publisher-name tag text to %s\n"
+                )
+            )
+            % (identifier, tag_text),
+        )
 
 
 class TestAddPrcCustomMetaTags(unittest.TestCase):

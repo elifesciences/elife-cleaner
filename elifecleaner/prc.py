@@ -12,6 +12,14 @@ ISSN_JOURNAL_ID_MAP = {
     }
 }
 
+# for each ISSN, values for other journal metadata
+ISSN_JOURNAL_META_MAP = {
+    "2050-084X": {
+        "journal-title": "eLife",
+        "publisher-name": "eLife Sciences Publications, Ltd",
+    }
+}
+
 
 def yield_journal_id_tags(root, journal_id_types):
     "find journal-id tags with matched journal-id-type attribute"
@@ -56,6 +64,43 @@ def transform_journal_id_tags(root, identifier=None):
                 journal_id_tag.get("journal-id-type")
             )
     return root
+
+
+def transform_journal_meta_tag(root, tag_name, tag_path, identifier=None):
+    "replace the text value of a tag in the journal meta"
+    issn_tag = root.find("./front/journal-meta/issn")
+    if issn_tag is not None and issn_tag.text in ISSN_JOURNAL_META_MAP:
+        journal_meta_map = ISSN_JOURNAL_META_MAP.get(issn_tag.text)
+        journal_title_tag = root.find(tag_path)
+        if journal_title_tag is not None and journal_meta_map.get(tag_name):
+            LOGGER.info(
+                "%s replacing %s tag text to %s",
+                identifier,
+                tag_name,
+                journal_meta_map.get(tag_name),
+            )
+            journal_title_tag.text = journal_meta_map.get(tag_name)
+    return root
+
+
+def transform_journal_title_tag(root, identifier=None):
+    "replace journal-title tag in xml Element with names from file transformations list"
+    return transform_journal_meta_tag(
+        root,
+        "journal-title",
+        "./front/journal-meta/journal-title-group/journal-title",
+        identifier,
+    )
+
+
+def transform_publisher_name_tag(root, identifier=None):
+    "replace publisher-name tag in xml Element with names from file transformations list"
+    return transform_journal_meta_tag(
+        root,
+        "publisher-name",
+        "./front/journal-meta/publisher/publisher-name",
+        identifier,
+    )
 
 
 def add_prc_custom_meta_tags(root, identifier=None):
