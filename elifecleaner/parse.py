@@ -250,7 +250,7 @@ def check_art_file(files, identifier):
         file_data for file_data in files if file_data.get("file_type") == "art_file"
     ]
     file_extensions = [
-        file_data.get("upload_file_nm").rsplit(".", 1)[-1]
+        utils.file_extension(file_data.get("upload_file_nm"))
         for file_data in art_files
         if file_data.get("upload_file_nm")
     ]
