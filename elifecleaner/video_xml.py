@@ -4,14 +4,9 @@ from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
 from elifearticle.article import ArticleDate
 from elifecleaner import parse
-from elifecleaner.utils import pad_msid
+from elifecleaner.utils import NAMESPACE_MAP, pad_msid
 
 JOURNAL_ID_TYPES = ["nlm-ta", "publisher-id"]
-
-NAMESPACE_MAP = {
-    "xmlns:mml": "http://www.w3.org/1998/Math/MathML",
-    "xmlns:xlink": "http://www.w3.org/1999/xlink",
-}
 
 MEDIA_CONTENT_TYPE = "glencoe play-in-place height-250 width-310"
 

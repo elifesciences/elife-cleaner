@@ -6,6 +6,13 @@ def pad_msid(msid):
     return "{:05d}".format(int(msid))
 
 
+def file_extension(file_name):
+    "parse file extension from file name"
+    if not file_name:
+        return None
+    return file_name.rsplit(".", 1)[-1]
+
+
 # match ascii characters from decimal 0 to 31, as hexidecimal character entitiy strings
 # e.g. &#x001D; or &#x01;
 CONTROL_CHARACTER_ENTITY_MATCH_PATTERN = r"&#x0{0,2}[0-1][0-9A-Fa-f];"
@@ -37,3 +44,39 @@ def replace_control_characters(string):
     for char in list(set(match_control_characters(string))):
         string = string.replace(char, CONTROL_CHARACTER_ENTITY_REPLACEMENT)
     return string
+
+
+def xlink_href(tag):
+    "return the xlink:href attribute of the tag"
+    return tag.get("{http://www.w3.org/1999/xlink}href")
+
+
+def open_tag(tag_name, attr=None):
+    "XML string for an open tag"
+    if not attr:
+        return "<%s>" % tag_name
+    attr_values = []
+    for name, value in sorted(attr.items()):
+        attr_values.append('%s="%s"' % (name, value))
+    return "<%s %s>" % (tag_name, " ".join(attr_values))
+
+
+def close_tag(tag_name):
+    "XML string for a close tag"
+    return "</%s>" % tag_name
+
+
+NAMESPACE_MAP = {
+    "xmlns:mml": "http://www.w3.org/1998/Math/MathML",
+    "xmlns:xlink": "http://www.w3.org/1999/xlink",
+}
+
+
+def namespace_string():
+    "return a string of XML namespaces"
+    return " ".join(
+        [
+            '%s="%s"' % (attrib_name, attrib_value)
+            for attrib_name, attrib_value in NAMESPACE_MAP.items()
+        ]
+    )
