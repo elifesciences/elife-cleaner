@@ -204,6 +204,10 @@ def transform_xml_file_tags(root, file_transformations):
     return root
 
 
+# when transforming history tag keep date tags having a date-type in the list below
+KEEP_HISTORY_DATE_TYPES = ["sent-for-review"]
+
+
 def transform_xml_history_tags(root, soup, zip_file_name):
     "remove history tags from the XML for particular article types"
     article_type = parser.article_type(soup)
@@ -224,9 +228,15 @@ def transform_xml_history_tags(root, soup, zip_file_name):
         or prc.is_xml_prc(root)
     ):
         LOGGER.info("%s transforming xml history tags", zip_file_name)
-        # remove history tag
+        # remove date tags from the history tag
         for history_tag in root.findall("./front/article-meta/history"):
-            root.find("./front/article-meta").remove(history_tag)
+            for date_tag in history_tag.findall("./date"):
+                if date_tag.get("date-type") not in KEEP_HISTORY_DATE_TYPES:
+                    history_tag.remove(date_tag)
+        # remove the history tag if it is empty
+        for history_tag in root.findall("./front/article-meta/history"):
+            if len(history_tag.findall("*")) <= 0:
+                root.find("./front/article-meta").remove(history_tag)
     return root
 
 
