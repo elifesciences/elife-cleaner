@@ -365,6 +365,136 @@ class TestBuildSubArticleObject(unittest.TestCase):
         self.assertEqual(len(sub_article_object.contributors), 0)
 
 
+class TestListTagStartValue(unittest.TestCase):
+    "tests for sub_article.list_tag_start_value()"
+
+    def test_list_tag_start_value(self):
+        "normal list start attribute"
+        start_value = 2
+        xml_string = '<list start="%s" />' % start_value
+        tag = ElementTree.fromstring(xml_string)
+        result = sub_article.list_tag_start_value(tag)
+        self.assertEqual(result, start_value)
+
+    def test_no_attribute(self):
+        "test if there is not start attribute"
+        xml_string = "<list />"
+        expected = 1
+        tag = ElementTree.fromstring(xml_string)
+        result = sub_article.list_tag_start_value(tag)
+        self.assertEqual(result, expected)
+
+
+class TestCopyListItemContent(unittest.TestCase):
+    "tests for sub_article.copy_list_item_content()"
+
+    def test_copy_list_item_content(self):
+        "test lots of list-item content"
+        from_tag_parent_xml_string = (
+            "<root><list-item>Text <italic>here</italic>.</list-item> tail.</root>"
+        )
+        to_tag_xml_string = "<p/>"
+        item_prefix = 1
+        from_tag_parent = ElementTree.fromstring(from_tag_parent_xml_string)
+        from_tag = from_tag_parent.find("list-item")
+        to_tag = ElementTree.fromstring(to_tag_xml_string)
+        expected = b"<p>%s. Text <italic>here</italic>.</p> tail." % bytes(
+            str(item_prefix), encoding="utf-8"
+        )
+        sub_article.copy_list_item_content(from_tag, to_tag, item_prefix)
+        self.assertEqual(ElementTree.tostring(to_tag), expected)
+
+    def test_empty_list_item(self):
+        "example where the list-item tag has no content"
+        from_tag_xml_string = "<list-item />"
+        to_tag_xml_string = "<p/>"
+        item_prefix = 1
+        from_tag = ElementTree.fromstring(from_tag_xml_string)
+        to_tag = ElementTree.fromstring(to_tag_xml_string)
+        expected = b"<p>%s. </p>" % bytes(str(item_prefix), encoding="utf-8")
+        sub_article.copy_list_item_content(from_tag, to_tag, item_prefix)
+        self.assertEqual(ElementTree.tostring(to_tag), expected)
+
+
+class TestTransformOrderedLists(unittest.TestCase):
+    "tests for sub_article.transform_ordered_lists()"
+
+    def test_one_list(self):
+        "an example where the list-item content is not wrapped in a p tag"
+        content_json = [
+            {
+                "xml": (
+                    "<root>"
+                    '<list list-type="order">'
+                    "<list-item><p>One.</p></list-item>"
+                    "</list>"
+                    "</root>"
+                )
+            }
+        ]
+        expected_xml = b"<root><p>1. One.</p></root>"
+        result = sub_article.transform_ordered_lists(content_json)
+        self.assertEqual(result[0].get("xml"), expected_xml)
+
+    def test_multiple_lists(self):
+        "an example where the list-item content is not wrapped in a p tag"
+        content_json = [
+            {
+                "xml": (
+                    "<root>"
+                    '<list list-type="order">'
+                    "<list-item>One.</list-item>"
+                    "</list>"
+                    '<list list-type="order" start="2">'
+                    "<list-item>Two.</list-item>"
+                    "<list-item>Three.</list-item>"
+                    "</list>"
+                    "<list>"
+                    "<list-item>Bullet.</list-item>"
+                    "</list>"
+                    "</root>"
+                )
+            }
+        ]
+        expected_xml = (
+            b"<root>"
+            b"<p>1. One.</p>"
+            b"<p>2. Two.</p>"
+            b"<p>3. Three.</p>"
+            b"<list>"
+            b"<list-item>Bullet.</list-item>"
+            b"</list>"
+            b"</root>"
+        )
+        result = sub_article.transform_ordered_lists(content_json)
+        self.assertEqual(result[0].get("xml"), expected_xml)
+
+    def test_no_p_tag(self):
+        "an example where the list-item content is not wrapped in a p tag"
+        content_json = [
+            {
+                "xml": '<root><list list-type="order"><list-item>One.</list-item></list></root>'
+            }
+        ]
+        expected_xml = b"<root><p>1. One.</p></root>"
+        result = sub_article.transform_ordered_lists(content_json)
+        self.assertEqual(result[0].get("xml"), expected_xml)
+
+    def test_simple_xml(self):
+        "test if there are no list tags"
+        content_json = [{"xml": "<root />"}]
+        expected_xml = b"<root />"
+        result = sub_article.transform_ordered_lists(content_json)
+        self.assertEqual(result[0].get("xml"), expected_xml)
+
+    def test_blank_string(self):
+        "test an empty list"
+        content_json = []
+        expected = []
+        result = sub_article.transform_ordered_lists(content_json)
+        self.assertEqual(result, expected)
+
+
 class TestFormatContentJson(unittest.TestCase):
     def test_format_content_json(self):
         article_titles = [
@@ -438,6 +568,56 @@ class TestFormatContentJson(unittest.TestCase):
         body_tag = sub_article_data[0].get("xml_root").find(".//body")
         self.assertIsNotNone(body_tag)
         self.assertEqual(body_tag.find("p").text, "Test evaluation summary.")
+
+    def test_modify_list(self):
+        "test modifying a variety of list tags"
+        article = Article()
+        content_json = [
+            {
+                "type": "reply",
+                "html": (
+                    b"<p><strong>Author Response:</strong></p>"
+                    b"<p>Four main findings:</p>"
+                    b"<ol>"
+                    b"<li>First point.</li>"
+                    b"</ol>"
+                    b"<p>About first point.</p>"
+                    b'<ol start="2">'
+                    b"<li>Second point.</li>"
+                    b"</ol>"
+                    b"<p>About second point.</p>"
+                    b'<ol start="3">'
+                    b"<li>Third <em>point</em>.</li>"
+                    b"<li>Fourth point.</li>"
+                    b"</ol>"
+                    b"<p>About the third and fourth points.</p>"
+                ),
+            },
+        ]
+        expected = (
+            b"<root>"
+            b"<front-stub>"
+            b"<title-group>"
+            b"<article-title>Author Response:</article-title>"
+            b"</title-group>"
+            b"</front-stub>"
+            b"<body>"
+            b"<p>Four main findings:</p>"
+            b"<p>1. First point.</p>"
+            b"<p>About first point.</p>"
+            b"<p>2. Second point.</p>"
+            b"<p>About second point.</p>"
+            b"<p>3. Third <italic>point</italic>.</p>"
+            b"<p>4. Fourth point.</p>"
+            b"<p>About the third and fourth points.</p>"
+            b"</body>"
+            b"</root>"
+        )
+        # invoke
+        sub_article_data = sub_article.format_content_json(content_json, article)
+        xml_root = sub_article_data[0].get("xml_root")
+        xml_string = ElementTree.tostring(xml_root)
+        self.assertEqual(xml_string, expected)
 
 
 class TestGenerate(unittest.TestCase):
