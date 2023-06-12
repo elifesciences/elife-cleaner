@@ -150,12 +150,77 @@ def build_sub_article_object(article_object, xml_root, content, index):
     return sub_article_object
 
 
+def list_tag_start_value(tag):
+    "determine a start value of a list tag"
+    try:
+        return int(tag.get("start"))
+    except TypeError:
+        # value is None
+        return 1
+
+
+def copy_list_item_content(from_tag, to_tag, item_prefix):
+    "copy the text plus the item_prefix, tail and child tags to the to_tag"
+
+    # copy over the text and add the item_prefix
+    tag_text = ""
+    if from_tag.text:
+        tag_text = from_tag.text
+    to_tag.text = "%s. %s" % (item_prefix, tag_text)
+
+    # copy over the tail though it is not expected to have a tail
+    to_tag.tail = from_tag.tail
+
+    # copy over any child tags
+    for content_tag_index, content_child_tag in enumerate(from_tag.iterfind("*")):
+        to_tag.insert(content_tag_index, content_child_tag)
+
+
+def transform_ordered_lists(content_json):
+    "list of list-type order convert each list-item to a p tag"
+    for index, content in enumerate(content_json):
+        xml_root = ElementTree.fromstring(content.get("xml"))
+        for list_tag_parent in xml_root.findall(".//list[@list-type='order']/.."):
+            for tag_index, child_tag in enumerate(list_tag_parent.iterfind("*")):
+                if child_tag.tag == "list" and child_tag.get("list-type") == "order":
+                    start_value = list_tag_start_value(child_tag)
+                    for item_index, list_item_tag in enumerate(
+                        child_tag.findall("list-item")
+                    ):
+                        # new p tag to hold the content
+                        p_tag = Element("p")
+
+                        list_item_p_tag = list_item_tag.find("p")
+
+                        if list_item_p_tag is not None:
+                            content_tag = list_item_p_tag
+                        else:
+                            # if there is no p tag, take content from the list_item_tag
+                            content_tag = list_item_tag
+
+                        copy_list_item_content(
+                            content_tag, p_tag, start_value + item_index
+                        )
+
+                        # insert the new p tag into the parent tree
+                        list_tag_parent.insert(tag_index + item_index, p_tag)
+
+                    # remove the old list tag
+                    list_tag_parent.remove(child_tag)
+
+        # replace the xml content
+        content_json[index]["xml"] = ElementTree.tostring(xml_root)
+    return content_json
+
+
 def format_content_json(content_json, article_object):
     data = []
     # parse html to xml
     content_json = docmap_parse.transform_docmap_content(content_json)
     # only keep items which have html
     content_json = [content for content in content_json if content.get("html")]
+    # modify the XML
+    content_json = transform_ordered_lists(content_json)
     # reorder the articles
     content_json = reorder_content_json(content_json)
     # create an article for each
