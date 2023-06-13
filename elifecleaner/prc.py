@@ -34,9 +34,7 @@ def yield_journal_id_tags(root, journal_id_types):
 def is_xml_prc(root):
     "check if the XML is PRC format by comparing journal-id tag text for a mismatch"
     issn_tag = root.find("./front/journal-meta/issn")
-    if issn_tag is None:
-        return False
-    if issn_tag.text in ISSN_JOURNAL_ID_MAP:
+    if issn_tag is not None and issn_tag.text in ISSN_JOURNAL_ID_MAP:
         journal_id_type_map = ISSN_JOURNAL_ID_MAP.get(issn_tag.text)
         # check if any of the journal-id tag values do not match the expected values
         for journal_id_tag in yield_journal_id_tags(root, journal_id_type_map.keys()):
@@ -44,6 +42,13 @@ def is_xml_prc(root):
                 journal_id_tag.get("journal-id-type")
             ):
                 return True
+    # also check the elocation-id tag value if the journal meta has already been changed
+    elocation_id_tag = root.find(".//front/article-meta/elocation-id")
+    if elocation_id_tag is not None:
+        if elocation_id_tag.text and elocation_id_tag.text.startswith(
+            ELOCATION_ID_PRC_TERM
+        ):
+            return True
     return False
 
 
@@ -128,7 +133,9 @@ def add_prc_custom_meta_tags(root, identifier=None):
 
 ELOCATION_ID_MATCH_PATTERN = r"e(.*)"
 
-ELOCATION_ID_REPLACEMENT_PATTERN = r"RP\1"
+ELOCATION_ID_PRC_TERM = "RP"
+
+ELOCATION_ID_REPLACEMENT_PATTERN = r"%s\1" % ELOCATION_ID_PRC_TERM
 
 
 def transform_elocation_id(

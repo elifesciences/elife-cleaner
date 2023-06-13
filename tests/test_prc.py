@@ -54,6 +54,19 @@ class TestIsXmlPrc(unittest.TestCase):
         root = ElementTree.fromstring("<root/>")
         self.assertEqual(prc.is_xml_prc(root), False)
 
+    def test_is_xml_prc_elocation_id(self):
+        "elocation-id value has already been changed on a PRC XML"
+        root = ElementTree.fromstring(
+            "<article>"
+            "<front>"
+            "<article-meta>"
+            "<elocation-id>RP88273</elocation-id>"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        self.assertEqual(prc.is_xml_prc(root), True)
+
 
 class TestTransformJournalIdTags(unittest.TestCase):
     def setUp(self):
