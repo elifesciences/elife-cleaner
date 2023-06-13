@@ -16,7 +16,7 @@ setup(
     install_requires=[
         "docmaptools>=0.9.0",
         "elifetools",
-        "elifearticle>=0.10.0",
+        "elifearticle>=0.15.0",
         "jatsgenerator>=0.4.0",
         "PyYAML>=5.4.1",
         "wand >= 0.5.2",

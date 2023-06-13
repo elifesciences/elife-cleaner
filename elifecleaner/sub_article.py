@@ -96,7 +96,7 @@ def sub_article_doi(article_doi, index):
     return "%s.%s" % (article_doi, sub_article_id(index))
 
 
-EDITOR_REPORT_CONTRIB_TYPES = ["editor"]
+EDITOR_REPORT_CONTRIB_TYPES = ["assoc_ed"]
 
 
 def sub_article_contributors(article_object, sub_article_object):

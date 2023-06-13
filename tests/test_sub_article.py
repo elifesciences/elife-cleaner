@@ -292,7 +292,7 @@ class TestSubArticleContributors(unittest.TestCase):
         author.orcid = "https://orcid.org/0000-0000-0000-0000"
         author.orcid_authenticated = True
         self.article_object.contributors.append(author)
-        editor = Contributor("editor", "Itor", "Ed")
+        editor = Contributor("assoc_ed", "Itor", "Ed")
         self.article_object.editors.append(editor)
         # reviewer contrib_type will not be added to an editor-report
         reviewer = Contributor("reviewer", "Ewer", "Revi")
@@ -504,7 +504,7 @@ class TestFormatContentJson(unittest.TestCase):
         ]
         article = Article("10.7554/eLife.79713.1")
         article.contributors = [Contributor("author", "Surname", "Given")]
-        article.editors = [Contributor("editor", "Editor", "Given")]
+        article.editors = [Contributor("assoc_ed", "Editor", "Given")]
         # invoke
         sub_article_data = sub_article.format_content_json(CONTENT_JSON, article)
         # assertions
