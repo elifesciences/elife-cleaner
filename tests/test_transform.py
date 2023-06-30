@@ -311,6 +311,60 @@ class TestFromFileToFileMap(unittest.TestCase):
         )
 
 
+class TestTransformSubjectTags(unittest.TestCase):
+    "tests for transform.transform_subject_tags()"
+
+    def test_transform_subject_tags(self):
+        "test removing (VOR) from a value and removing duplicate subject tags"
+        xml_string = (
+            "<article>"
+            "<front>"
+            "<article-meta>"
+            "<article-categories>"
+            '<subj-group subj-group-type="display-channel">'
+            "<subject>Research Article (VOR)</subject>"
+            "</subj-group>"
+            '<subj-group subj-group-type="heading">'
+            "<subject>Epidemiology and Global Health</subject>"
+            "</subj-group>"
+            '<subj-group subj-group-type="heading">'
+            "<subject>Epidemiology and Global Health</subject>"
+            "</subj-group>"
+            '<subj-group subj-group-type="heading">'
+            "<subject>Medicine</subject>"
+            "</subj-group>"
+            '<subj-group subj-group-type="heading">'
+            "<subject>Medicine</subject>"
+            "</subj-group>"
+            "</article-categories>"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        root = ElementTree.fromstring(xml_string)
+        expected = (
+            b"<article>"
+            b"<front>"
+            b"<article-meta>"
+            b"<article-categories>"
+            b'<subj-group subj-group-type="display-channel">'
+            b"<subject>Research Article</subject>"
+            b"</subj-group>"
+            b'<subj-group subj-group-type="heading">'
+            b"<subject>Epidemiology and Global Health</subject>"
+            b"</subj-group>"
+            b'<subj-group subj-group-type="heading">'
+            b"<subject>Medicine</subject>"
+            b"</subj-group>"
+            b"</article-categories>"
+            b"</article-meta>"
+            b"</front>"
+            b"</article>"
+        )
+        transform.transform_subject_tags(root, None)
+        self.assertEqual(ElementTree.tostring(root), expected)
+
+
 class TestTransformXmlFileTags(unittest.TestCase):
     def test_transform_xml_file_tags(self):
         # populate an ElementTree
