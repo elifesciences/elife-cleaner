@@ -128,6 +128,7 @@ def transform_xml(xml_asset_path, identifier):
     # remove history tags from XML for certain article types
     root = parse.parse_article_xml(xml_asset_path)
     soup = parser.parse_document(xml_asset_path)
+    root = transform_subject_tags(root, identifier)
     root = transform_xml_history_tags(root, soup, identifier)
     root = transform_xml_funding(root, identifier)
     write_xml_file(root, xml_asset_path, identifier)
@@ -193,6 +194,27 @@ def from_file_to_file_map(file_transformations):
         from_file.xml_name: to_file.xml_name
         for from_file, to_file in file_transformations
     }
+
+
+def transform_subject_tags(root, identifier):
+    "modify values and remove duplicate subject tags"
+    # remove unwanted portion of subject value
+    for subject_tag in root.findall("./front/article-meta/article-categories//subject"):
+        subject_tag.text = subject_tag.text.replace("(VOR)", "").rstrip()
+    # remove duplicate subject tags
+    subject_set = set()
+    article_categories_tag = root.find("front/article-meta/article-categories")
+    for subject_group_tag in article_categories_tag.findall("subj-group"):
+        subject_tag = subject_group_tag.find("subject")
+        if subject_tag is not None:
+            if subject_tag.text in subject_set:
+                LOGGER.info(
+                    "%s removing duplicate subject tag %s"
+                    % (identifier, subject_tag.text)
+                )
+                article_categories_tag.remove(subject_group_tag)
+            subject_set.add(subject_tag.text)
+    return root
 
 
 def transform_xml_file_tags(root, file_transformations):
