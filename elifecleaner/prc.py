@@ -1,6 +1,8 @@
 import re
+import time
 from xml.etree.ElementTree import Element, SubElement
 from docmaptools import parse as docmap_parse
+from jatsgenerator import build as jats_build
 from elifecleaner import LOGGER
 
 # for each ISSN, values for journal-id-type tag text
@@ -249,4 +251,68 @@ def add_version_doi(root, doi, identifier=None):
         if tag.tag == "article-id":
             insert_index = tag_index + 1
     article_meta_tag.insert(insert_index, article_id_tag)
+    return root
+
+
+def review_date_from_docmap(docmap_string, identifier=None):
+    "find the under-review date for the first preprint from the docmap"
+    date_string = None
+    LOGGER.info("Parse docmap json")
+    d_json = docmap_parse.docmap_json(docmap_string)
+    if not d_json:
+        LOGGER.warning(
+            "%s parsing docmap returned None",
+            identifier,
+        )
+        return date_string
+    LOGGER.info("Get first under-review happened date from the docmap")
+    date_string = docmap_parse.preprint_review_date(d_json)
+    if not date_string:
+        LOGGER.warning(
+            "%s no under-review happened date was found in the docmap",
+            identifier,
+        )
+    return date_string
+
+
+def date_struct_from_string(date_string):
+    "parse the date_string into time.struct_time"
+    formats = ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d"]
+    for date_format in formats:
+        try:
+            return time.strptime(date_string, date_format)
+        except ValueError:
+            LOGGER.info(
+                'unable to parse "%s" using format "%s"',
+                date_string,
+                date_format,
+            )
+    return None
+
+
+def add_history_date(root, date_type, date_struct, identifier=None):
+    "find or add the history tag and add a date to it"
+    article_meta_tag = root.find(".//front/article-meta")
+    if article_meta_tag is None:
+        LOGGER.warning(
+            "%s article-meta tag not found",
+            identifier,
+        )
+        return root
+    # look for an existing history tag
+    history_tag = article_meta_tag.find("./history")
+    # if no history tag, add one
+    if history_tag is None:
+        # insert the new tag into the XML after the elocation-id tag
+        insert_index = 1
+        for tag_index, tag in enumerate(article_meta_tag.findall("*")):
+            if tag.tag == "elocation-id":
+                insert_index = tag_index + 1
+        history_tag = Element("history")
+        article_meta_tag.insert(insert_index, history_tag)
+    # add date tag to the history tag
+    date_tag = SubElement(history_tag, "date")
+    if date_type:
+        date_tag.set("date-type", date_type)
+    jats_build.set_dmy(date_tag, date_struct)
     return root
