@@ -1,4 +1,5 @@
 import os
+import time
 import unittest
 from xml.etree import ElementTree
 import json
@@ -306,7 +307,20 @@ def docmap_test_data(doi=None):
     docmap_json = {
         "first-step": "_:b0",
         "steps": {
-            "_:b0": {"next-step": "_:b1"},
+            "_:b0": {
+                "assertions": [
+                    {
+                        "item": {
+                            "type": "preprint",
+                            "doi": "10.1101/2022.11.08.515698",
+                            "versionIdentifier": "2",
+                        },
+                        "status": "under-review",
+                        "happened": "2022-11-28T11:30:05+00:00",
+                    }
+                ],
+                "next-step": "_:b1",
+            },
             "_:b1": {
                 "actions": [
                     {
@@ -543,3 +557,181 @@ class TestAddVersionDoi(unittest.TestCase):
                 )
                 % self.identifier,
             )
+
+
+class TestReviewDateFromDocmap(unittest.TestCase):
+    "tests for prc.review_date_from_docmap()"
+
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+        self.identifier = "test.zip"
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_review_date_from_docmap(self):
+        "test docmap which has a review date"
+        docmap_json = docmap_test_data()
+        expected = "2022-11-28T11:30:05+00:00"
+        # invoke
+        date_string = prc.review_date_from_docmap(json.dumps(docmap_json))
+        # assert
+        self.assertEqual(date_string, expected)
+
+    def test_no_assertions(self):
+        "test docmap which has a review date"
+        docmap_json = docmap_test_data()
+        # remove assertions from the test data
+        del docmap_json["steps"]["_:b0"]["assertions"]
+        expected = None
+        # invoke
+        date_string = prc.review_date_from_docmap(json.dumps(docmap_json))
+        # assert
+        self.assertEqual(date_string, expected)
+
+    def test_docmap_is_none(self):
+        "test for no docmap"
+        docmap_json = {}
+        result = prc.review_date_from_docmap(json.dumps(docmap_json), self.identifier)
+        self.assertEqual(result, None)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:review_date_from_docmap: "
+                    "%s parsing docmap returned None\n"
+                )
+                % self.identifier,
+            )
+
+
+class TestDateStructFromString(unittest.TestCase):
+    "tests for prc.date_struct_from_string()"
+
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+        self.identifier = "test.zip"
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_with_timezone(self):
+        "test docmap which has a review date"
+        date_string = "2022-11-28T11:30:05+00:00"
+        expected = time.strptime(date_string, "%Y-%m-%dT%H:%M:%S%z")
+        result = prc.date_struct_from_string(date_string)
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(log_messages, [])
+
+    def test_date(self):
+        "test docmap which has a review date"
+        date_string = "2022-11-28"
+        expected = time.strptime(date_string, "%Y-%m-%d")
+        result = prc.date_struct_from_string(date_string)
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "INFO elifecleaner:prc:date_struct_from_string: "
+                    'unable to parse "%s" using format "%s"\n'
+                )
+                % (date_string, "%Y-%m-%dT%H:%M:%S%z"),
+            )
+
+    def test_not_a_date(self):
+        "test docmap which has a review date"
+        date_string = "not_a_date"
+        expected = None
+        result = prc.date_struct_from_string(date_string)
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[0],
+                (
+                    "INFO elifecleaner:prc:date_struct_from_string: "
+                    'unable to parse "%s" using format "%s"\n'
+                )
+                % (date_string, "%Y-%m-%dT%H:%M:%S%z"),
+            )
+
+
+class TestAddHistoryDate(unittest.TestCase):
+    "tests for prc.add_history_date()"
+
+    def setUp(self):
+        self.xml_string_template = (
+            "<article><front><article-meta>%s</article-meta></front></article>"
+        )
+        self.date_type = "sent-for-review"
+        date_string = "2022-11-28"
+        self.date_struct = time.strptime(date_string, "%Y-%m-%d")
+        self.identifier = "test.zip"
+        # expected history XML string for when using the input values
+        self.history_xml_output = (
+            "<history>"
+            '<date date-type="sent-for-review">'
+            "<day>28</day>"
+            "<month>11</month>"
+            "<year>2022</year>"
+            "</date>"
+            "</history>"
+        )
+
+    def test_add_history_date(self):
+        "test adding a date to an existing history tag"
+        xml_string = self.xml_string_template % "<history />"
+        expected = bytes(
+            self.xml_string_template % self.history_xml_output, encoding="utf-8"
+        )
+        root = ElementTree.fromstring(xml_string)
+        root_output = prc.add_history_date(
+            root, self.date_type, self.date_struct, self.identifier
+        )
+        self.assertEqual(ElementTree.tostring(root_output), expected)
+
+    def test_no_history_tag(self):
+        "test if there is no history tag"
+        xml_string = self.xml_string_template % ""
+        expected = bytes(
+            self.xml_string_template % self.history_xml_output, encoding="utf-8"
+        )
+        root = ElementTree.fromstring(xml_string)
+        root_output = prc.add_history_date(
+            root, self.date_type, self.date_struct, self.identifier
+        )
+        self.assertEqual(ElementTree.tostring(root_output), expected)
+
+    def test_elocation_id_tag(self):
+        "test history tag should be added after the elocation-id tag"
+        xml_string = self.xml_string_template % "<elocation-id />"
+        expected = bytes(
+            self.xml_string_template % ("<elocation-id />" + self.history_xml_output),
+            encoding="utf-8",
+        )
+        root = ElementTree.fromstring(xml_string)
+        root_output = prc.add_history_date(
+            root, self.date_type, self.date_struct, self.identifier
+        )
+        self.assertEqual(ElementTree.tostring(root_output), expected)
+
+    def test_no_article_meta(self):
+        "test if there is no article-meta tag"
+        xml_string = "<article />"
+        expected = b"<article />"
+        root = ElementTree.fromstring(xml_string)
+        root_output = prc.add_history_date(
+            root, self.date_type, self.date_struct, self.identifier
+        )
+        self.assertEqual(ElementTree.tostring(root_output), expected)
