@@ -365,6 +365,44 @@ class TestTransformSubjectTags(unittest.TestCase):
         self.assertEqual(ElementTree.tostring(root), expected)
 
 
+class TestTransformKwdTags(unittest.TestCase):
+    "tests for transform.transform_kwd_tags()"
+
+    def test_transform_kwd_tags(self):
+        "test removing duplicate kwd tags"
+        xml_string = (
+            "<article>"
+            "<front>"
+            "<article-meta>"
+            '<kwd-group kwd-group-type="research-organism">'
+            "<title>Research organism</title>"
+            "<kwd>Human</kwd>"
+            "<kwd>Human</kwd>"
+            "<kwd>Other</kwd>"
+            "<kwd>Other</kwd>"
+            "</kwd-group>"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        root = ElementTree.fromstring(xml_string)
+        expected = (
+            b"<article>"
+            b"<front>"
+            b"<article-meta>"
+            b'<kwd-group kwd-group-type="research-organism">'
+            b"<title>Research organism</title>"
+            b"<kwd>Human</kwd>"
+            b"<kwd>Other</kwd>"
+            b"</kwd-group>"
+            b"</article-meta>"
+            b"</front>"
+            b"</article>"
+        )
+        transform.transform_kwd_tags(root, None)
+        self.assertEqual(ElementTree.tostring(root), expected)
+
+
 class TestTransformXmlFileTags(unittest.TestCase):
     def test_transform_xml_file_tags(self):
         # populate an ElementTree

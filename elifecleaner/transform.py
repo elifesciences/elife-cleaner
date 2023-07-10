@@ -129,6 +129,7 @@ def transform_xml(xml_asset_path, identifier):
     root = parse.parse_article_xml(xml_asset_path)
     soup = parser.parse_document(xml_asset_path)
     root = transform_subject_tags(root, identifier)
+    root = transform_kwd_tags(root, identifier)
     root = transform_xml_history_tags(root, soup, identifier)
     root = transform_xml_funding(root, identifier)
     write_xml_file(root, xml_asset_path, identifier)
@@ -214,6 +215,21 @@ def transform_subject_tags(root, identifier):
                 )
                 article_categories_tag.remove(subject_group_tag)
             subject_set.add(subject_tag.text)
+    return root
+
+
+def transform_kwd_tags(root, identifier):
+    "remove duplicate kwd tags"
+    # for each kwd-group tag, look for and remove duplicate kwd tags
+    for kwd_group_tag in root.findall("front/article-meta/kwd-group"):
+        kwd_set = set()
+        for kwd_tag in kwd_group_tag.findall("kwd"):
+            if kwd_tag.text in kwd_set:
+                LOGGER.info(
+                    "%s removing duplicate kwd tag %s" % (identifier, kwd_tag.text)
+                )
+                kwd_group_tag.remove(kwd_tag)
+            kwd_set.add(kwd_tag.text)
     return root
 
 
