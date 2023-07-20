@@ -277,7 +277,7 @@ def review_date_from_docmap(docmap_string, identifier=None):
 
 def date_struct_from_string(date_string):
     "parse the date_string into time.struct_time"
-    formats = ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d"]
+    formats = ["%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d"]
     for date_format in formats:
         try:
             return time.strptime(date_string, date_format)
