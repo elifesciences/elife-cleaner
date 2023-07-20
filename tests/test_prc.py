@@ -630,7 +630,14 @@ class TestDateStructFromString(unittest.TestCase):
         self.assertEqual(result, expected)
         with open(self.log_file, "r") as open_file:
             log_messages = open_file.readlines()
-            self.assertEqual(log_messages, [])
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "INFO elifecleaner:prc:date_struct_from_string: "
+                    'unable to parse "%s" using format "%s"\n'
+                )
+                % (date_string, "%Y-%m-%dT%H:%M:%S.%f%z"),
+            )
 
     def test_date(self):
         "test docmap which has a review date"
@@ -649,6 +656,16 @@ class TestDateStructFromString(unittest.TestCase):
                 % (date_string, "%Y-%m-%dT%H:%M:%S%z"),
             )
 
+    def test_with_microtime(self):
+        "test docmap which has a review date"
+        date_string = "2022-11-28T11:30:05.579531+00:00"
+        expected = time.strptime(date_string, "%Y-%m-%dT%H:%M:%S.%f%z")
+        result = prc.date_struct_from_string(date_string)
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(log_messages, [])
+
     def test_not_a_date(self):
         "test docmap which has a review date"
         date_string = "not_a_date"
@@ -663,7 +680,7 @@ class TestDateStructFromString(unittest.TestCase):
                     "INFO elifecleaner:prc:date_struct_from_string: "
                     'unable to parse "%s" using format "%s"\n'
                 )
-                % (date_string, "%Y-%m-%dT%H:%M:%S%z"),
+                % (date_string, "%Y-%m-%dT%H:%M:%S.%f%z"),
             )
 
 
