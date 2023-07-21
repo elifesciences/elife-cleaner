@@ -3,6 +3,7 @@ import time
 from xml.etree.ElementTree import Element, SubElement
 from docmaptools import parse as docmap_parse
 from jatsgenerator import build as jats_build
+from elifetools.utils import doi_to_doi_uri
 from elifecleaner import LOGGER
 
 # for each ISSN, values for journal-id-type tag text
@@ -315,4 +316,46 @@ def add_history_date(root, date_type, date_struct, identifier=None):
     if date_type:
         date_tag.set("date-type", date_type)
     jats_build.set_dmy(date_tag, date_struct)
+    return root
+
+
+def add_pub_history(root, history_data, identifier=None):
+    "add the pub-history tag and add event data to it"
+    if not history_data:
+        return root
+    article_meta_tag = root.find(".//front/article-meta")
+    if article_meta_tag is None:
+        LOGGER.warning(
+            "%s article-meta tag not found",
+            identifier,
+        )
+        return root
+    # look for an existing pub-history tag
+    pub_history_tag = article_meta_tag.find("./pub-history")
+    # if no pub-history tag, add one
+    if pub_history_tag is None:
+        # insert the new tag into the XML after the history or elocation-id tag
+        insert_index = 1
+        for tag_index, tag in enumerate(article_meta_tag.findall("*")):
+            if tag.tag in "history":
+                insert_index = tag_index + 1
+                break
+            if tag.tag == "elocation-id":
+                insert_index = tag_index + 1
+        pub_history_tag = Element("pub-history")
+        article_meta_tag.insert(insert_index, pub_history_tag)
+    # add event tags to the pub-history tag
+    for history_event_data in history_data:
+        event_tag = SubElement(pub_history_tag, "event")
+        if history_event_data.get("date"):
+            date_struct = date_struct_from_string(history_event_data.get("date"))
+            date_tag = SubElement(event_tag, "date")
+            if history_event_data.get("type"):
+                date_tag.set("date-type", history_event_data.get("type"))
+            jats_build.set_dmy(date_tag, date_struct)
+            if history_event_data.get("doi"):
+                self_uri_tag = SubElement(event_tag, "self-uri")
+                if history_event_data.get("type"):
+                    self_uri_tag.set("content-type", history_event_data.get("type"))
+                self_uri_tag.text = doi_to_doi_uri(history_event_data.get("doi"))
     return root
