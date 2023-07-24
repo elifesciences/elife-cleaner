@@ -319,6 +319,11 @@ def add_history_date(root, date_type, date_struct, identifier=None):
     return root
 
 
+EVENT_DESC_PREPRINT = "This manuscript was published as a preprint."
+EVENT_DESC_REVIEWED_PREPRINT = "This manuscript was published as a reviewed preprint."
+EVENT_DESC_REVISED_PREPRINT = "The reviewed preprint was revised."
+
+
 def add_pub_history(root, history_data, identifier=None):
     "add the pub-history tag and add event data to it"
     if not history_data:
@@ -345,14 +350,29 @@ def add_pub_history(root, history_data, identifier=None):
         pub_history_tag = Element("pub-history")
         article_meta_tag.insert(insert_index, pub_history_tag)
     # add event tags to the pub-history tag
+    added_reviewed_preprint = None
     for history_event_data in history_data:
         event_tag = SubElement(pub_history_tag, "event")
+        if history_event_data.get("type"):
+            if history_event_data.get("type") == "preprint":
+                event_desc_tag = SubElement(event_tag, "event-desc")
+                event_desc_tag.text = EVENT_DESC_PREPRINT
+            elif history_event_data.get("type") == "reviewed-preprint":
+                event_desc_tag = SubElement(event_tag, "event-desc")
+                if added_reviewed_preprint:
+                    # already added one reviewed-preprint
+                    event_desc_tag.text = EVENT_DESC_REVISED_PREPRINT
+                else:
+                    # adding the first reviewed-preprint
+                    event_desc_tag.text = EVENT_DESC_REVIEWED_PREPRINT
+                added_reviewed_preprint = True
         if history_event_data.get("date"):
             date_struct = date_struct_from_string(history_event_data.get("date"))
             date_tag = SubElement(event_tag, "date")
             if history_event_data.get("type"):
                 date_tag.set("date-type", history_event_data.get("type"))
             jats_build.set_dmy(date_tag, date_struct)
+            date_tag.set("iso-8601-date", time.strftime("%Y-%m-%d", date_struct))
             if history_event_data.get("doi"):
                 self_uri_tag = SubElement(event_tag, "self-uri")
                 if history_event_data.get("type"):
