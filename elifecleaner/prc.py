@@ -372,6 +372,7 @@ def add_pub_history(root, history_data, identifier=None):
             if history_event_data.get("type"):
                 date_tag.set("date-type", history_event_data.get("type"))
             jats_build.set_dmy(date_tag, date_struct)
+            date_tag.set("iso-8601-date", time.strftime("%Y-%m-%d", date_struct))
             if history_event_data.get("doi"):
                 self_uri_tag = SubElement(event_tag, "self-uri")
                 if history_event_data.get("type"):
