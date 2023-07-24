@@ -800,7 +800,8 @@ class TestAddPubHistory(unittest.TestCase):
         self.xml_output = (
             "<pub-history>"
             "<event>"
-            '<date date-type="preprint">'
+            "<event-desc>This manuscript was published as a preprint.</event-desc>"
+            '<date date-type="preprint" iso-8601-date="2022-11-22">'
             "<day>22</day>"
             "<month>11</month>"
             "<year>2022</year>"
@@ -810,7 +811,8 @@ class TestAddPubHistory(unittest.TestCase):
             "</self-uri>"
             "</event>"
             "<event>"
-            '<date date-type="reviewed-preprint">'
+            "<event-desc>This manuscript was published as a reviewed preprint.</event-desc>"
+            '<date date-type="reviewed-preprint" iso-8601-date="2023-01-25">'
             "<day>25</day>"
             "<month>01</month>"
             "<year>2023</year>"
@@ -820,7 +822,8 @@ class TestAddPubHistory(unittest.TestCase):
             "</self-uri>"
             "</event>"
             "<event>"
-            '<date date-type="reviewed-preprint">'
+            "<event-desc>The reviewed preprint was revised.</event-desc>"
+            '<date date-type="reviewed-preprint" iso-8601-date="2023-05-10">'
             "<day>10</day>"
             "<month>05</month>"
             "<year>2023</year>"
