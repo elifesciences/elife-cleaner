@@ -3,6 +3,7 @@ import time
 import unittest
 from xml.etree import ElementTree
 import json
+from elifetools import xmlio
 from elifecleaner import LOGGER, configure_logging, prc
 from tests.helpers import delete_files_in_folder
 
@@ -758,9 +759,10 @@ class TestAddPubHistory(unittest.TestCase):
     "tests for prc.add_pub_history()"
 
     def setUp(self):
-        self.xml_string_template = (
-            "<article><front><article-meta>%s</article-meta></front></article>"
-        )
+        # register XML namespaces
+        xmlio.register_xmlns()
+
+        self.xml_string_template = '<article xmlns:xlink="http://www.w3.org/1999/xlink"><front><article-meta>%s</article-meta></front></article>'
         self.history_data = [
             {
                 "type": "preprint",
@@ -806,9 +808,7 @@ class TestAddPubHistory(unittest.TestCase):
             "<month>11</month>"
             "<year>2022</year>"
             "</date>"
-            '<self-uri content-type="preprint">'
-            "https://doi.org/10.1101/2022.11.08.515698"
-            "</self-uri>"
+            '<self-uri content-type="preprint" xlink:href="https://doi.org/10.1101/2022.11.08.515698" />'
             "</event>"
             "<event>"
             "<event-desc>This manuscript was published as a reviewed preprint.</event-desc>"
@@ -817,9 +817,7 @@ class TestAddPubHistory(unittest.TestCase):
             "<month>01</month>"
             "<year>2023</year>"
             "</date>"
-            '<self-uri content-type="reviewed-preprint">'
-            "https://doi.org/10.7554/eLife.85111.1"
-            "</self-uri>"
+            '<self-uri content-type="reviewed-preprint" xlink:href="https://doi.org/10.7554/eLife.85111.1" />'
             "</event>"
             "<event>"
             "<event-desc>The reviewed preprint was revised.</event-desc>"
@@ -828,9 +826,7 @@ class TestAddPubHistory(unittest.TestCase):
             "<month>05</month>"
             "<year>2023</year>"
             "</date>"
-            '<self-uri content-type="reviewed-preprint">'
-            "https://doi.org/10.7554/eLife.85111.2"
-            "</self-uri>"
+            '<self-uri content-type="reviewed-preprint" xlink:href="https://doi.org/10.7554/eLife.85111.2" />'
             "</event>"
             "</pub-history>"
         )
@@ -841,11 +837,15 @@ class TestAddPubHistory(unittest.TestCase):
         expected = bytes(self.xml_string_template % self.xml_output, encoding="utf-8")
         root = ElementTree.fromstring(xml_string)
         root_output = prc.add_pub_history(root, self.history_data, self.identifier)
+        print(ElementTree.tostring(root_output))
         self.assertEqual(ElementTree.tostring(root_output), expected)
 
     def test_no_data(self):
         "test for if there is no data to be added"
-        xml_string = self.xml_string_template % "<break />"
+        # use xlink:href in the sample and the xmlns is kept in the output
+        xml_string = (
+            self.xml_string_template % '<ext-link xlink:href="https://example.org" />'
+        )
         history_data = None
         expected = bytes(xml_string, encoding="utf-8")
         root = ElementTree.fromstring(xml_string)
