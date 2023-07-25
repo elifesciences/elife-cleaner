@@ -377,5 +377,8 @@ def add_pub_history(root, history_data, identifier=None):
                 self_uri_tag = SubElement(event_tag, "self-uri")
                 if history_event_data.get("type"):
                     self_uri_tag.set("content-type", history_event_data.get("type"))
-                self_uri_tag.text = doi_to_doi_uri(history_event_data.get("doi"))
+                self_uri_tag.set(
+                    "{http://www.w3.org/1999/xlink}href",
+                    doi_to_doi_uri(history_event_data.get("doi")),
+                )
     return root
