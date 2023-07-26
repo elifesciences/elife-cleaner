@@ -276,6 +276,71 @@ def review_date_from_docmap(docmap_string, identifier=None):
     return date_string
 
 
+def volume_from_docmap(docmap_string, identifier=None):
+    "from the docmap calculate the volume"
+    LOGGER.info("Parse docmap json")
+    d_json = docmap_parse.docmap_json(docmap_string)
+    if not d_json:
+        LOGGER.warning(
+            "%s parsing docmap returned None",
+            identifier,
+        )
+        return None
+    history_data = docmap_parse.docmap_preprint_history(d_json)
+    if not history_data:
+        LOGGER.warning(
+            "%s no history data from the docmap",
+            identifier,
+        )
+        return None
+    return volume_from_history_data(history_data, identifier)
+
+
+# year of first publication, used for calculating volume
+START_YEAR = 2011
+
+
+def volume_from_history_data(history_data, identifier=None):
+    "from history data, calculate the volume from the first reviewed preprint"
+    if not history_data:
+        LOGGER.warning(
+            "%s no history_data",
+            identifier,
+        )
+        return None
+    LOGGER.info(
+        "%s get first reviewed-preprint history event from the history_data", identifier
+    )
+    reviewed_preprint_event_data = None
+    for event_data in history_data:
+        if event_data.get("type") == "reviewed-preprint":
+            reviewed_preprint_event_data = event_data
+            break
+    if not reviewed_preprint_event_data:
+        LOGGER.warning(
+            "%s no reviewed-preprint event found",
+            identifier,
+        )
+        return None
+    if not reviewed_preprint_event_data.get("date"):
+        LOGGER.warning(
+            "%s first reviewed-preprint event has no published date",
+            identifier,
+        )
+        return None
+
+    # get the date from the event data
+    date_struct = date_struct_from_string(reviewed_preprint_event_data.get("date"))
+    if not date_struct:
+        LOGGER.warning(
+            "%s could not parse date from the reviewed-preprint event",
+            identifier,
+        )
+        return None
+    year = date_struct[0]
+    return year - START_YEAR
+
+
 def date_struct_from_string(date_string):
     "parse the date_string into time.struct_time"
     formats = ["%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d"]
