@@ -445,6 +445,13 @@ class TestSplitTtitleParts(unittest.TestCase):
         result = fig.split_title_parts(xml_string)
         self.assertEqual(result, expected)
 
+    def test_no_full_stop(self):
+        "test splitting string wiht no full stop"
+        xml_string = "<p>Test</p>"
+        expected = ["<p>Test</p>"]
+        result = fig.split_title_parts(xml_string)
+        self.assertEqual(result, expected)
+
 
 class TestTitleParagraphContent(unittest.TestCase):
     "tests for fig.title_paragraph_content()"

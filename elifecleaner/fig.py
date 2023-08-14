@@ -229,6 +229,9 @@ def split_title_parts(xml_string):
     # append the final content
     if title_parts:
         title_parts[-1] += string_part
+    elif string_part:
+        # only one string found
+        title_parts.append(string_part)
 
     return title_parts
 
