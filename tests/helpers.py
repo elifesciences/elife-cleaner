@@ -50,3 +50,14 @@ def read_log_file_lines(log_file_path):
         for line in open_file:
             log_file_lines.append(line)
     return log_file_lines
+
+
+def sub_article_xml_fixture(
+    article_type, sub_article_id, front_stub_xml_string, body_xml_string
+):
+    "generate test fixture XML for a sub-article"
+    return (
+        b'<sub-article xmlns:xlink="http://www.w3.org/1999/xlink" '
+        b'article-type="%s" id="%s">%s%s</sub-article>'
+        % (article_type, sub_article_id, front_stub_xml_string, body_xml_string)
+    )
