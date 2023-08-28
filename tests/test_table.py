@@ -1,10 +1,13 @@
 import os
 import unittest
+from xml.dom import minidom
 from xml.etree import ElementTree
+from xml.etree.ElementTree import Element
 from elifetools import xmlio
 from elifecleaner import configure_logging, table, LOGGER
 from tests.helpers import (
     delete_files_in_folder,
+    read_fixture,
     read_log_file_lines,
     sub_article_xml_fixture,
 )
@@ -95,3 +98,63 @@ class TestTransformTable(unittest.TestCase):
             % (block_info_prefix, "is_p_inline_graphic", self.identifier),
         ]
         self.assertEqual(read_log_file_lines(self.log_file), expected)
+
+
+class TestTsvToList(unittest.TestCase):
+    "tests for table.tsv_to_list()"
+
+    def test_tsv_to_list(self):
+        "test converting tab separated value string to a list"
+        tsv_string = read_fixture("85111_table.tsv")
+        expected = read_fixture("85111_table.py")
+        result = table.tsv_to_list(tsv_string)
+        self.assertEqual(result, expected)
+
+    def test_none(self):
+        "test None"
+        tsv_string = None
+        expected = []
+        result = table.tsv_to_list(tsv_string)
+        self.assertEqual(result, expected)
+
+
+class TestListToTableXml(unittest.TestCase):
+    "tests for table.list_to_table_xml()"
+
+    def setUp(self):
+        self.maxDiff = None
+
+    def test_list_to_table_xml(self):
+        "test converting a list of rows into an XML table"
+        encoding = "utf-8"
+        indent = "    "
+        table_rows = read_fixture("85111_table.py")
+        expected = read_fixture("85111_table.xml")
+        result = table.list_to_table_xml(table_rows)
+        self.assertTrue(isinstance(result, Element))
+        # convert result to a pretty string
+        rough_string = ElementTree.tostring(result)
+        reparsed = minidom.parseString(rough_string)
+        pretty_result = reparsed.toprettyxml(indent, encoding=encoding).decode("utf-8")
+        self.assertEqual(pretty_result, expected)
+
+    def test_inline_tag(self):
+        "test for inline tags in the table rows"
+        table_rows = [["<italic>Italic\n</italic>>"], ["<<bold>&</bold><foo>"]]
+        expected = (
+            "<table>"
+            "<thead>"
+            "<tr>"
+            "<th><italic>Italic<break /></italic>&gt;</th>"
+            "</tr>"
+            "</thead>"
+            "<tbody>"
+            "<tr>"
+            "<td>&lt;<bold>&amp;</bold>&lt;foo&gt;</td>"
+            "</tr>"
+            "</tbody>"
+            "</table>"
+        )
+        result = table.list_to_table_xml(table_rows)
+        self.assertTrue(isinstance(result, Element))
+        self.assertEqual(ElementTree.tostring(result).decode("utf-8"), expected)
