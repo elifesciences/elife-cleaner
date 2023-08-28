@@ -1,3 +1,7 @@
+import csv
+from io import StringIO
+from xml.etree.ElementTree import Element, SubElement
+from jatsgenerator.utils import append_to_tag
 from elifecleaner import block, utils
 
 
@@ -63,3 +67,33 @@ def transform_table(sub_article_root, identifier):
         )
         transform_table_groups(body_tag, table_index_groups, sub_article_id)
     return sub_article_root
+
+
+def tsv_to_list(tsv_string):
+    "convert Tab Separated Value (TSV) string to a list"
+    table_rows = []
+    reader = csv.reader(StringIO(tsv_string), delimiter="\t")
+    for row in reader:
+        table_rows.append(row)
+    return table_rows
+
+
+def list_to_table_xml(table_rows):
+    "convert list of rows into table XML"
+    table_tag = Element("table")
+    for row_index, row in enumerate(table_rows):
+        if row_index <= 0:
+            block_tag = SubElement(table_tag, "thead")
+            cell_tag_name = "th"
+        elif row_index == 1:
+            block_tag = SubElement(table_tag, "tbody")
+            cell_tag_name = "td"
+        tr_tag = SubElement(block_tag, "tr")
+        for cell in row:
+            # replace new line charactes with a break tag
+            cell = cell.replace("\n", "<break/>")
+            # strip whitespace
+            cell = cell.lstrip().rstrip()
+            # append to the tr tag
+            append_to_tag(tr_tag, cell_tag_name, cell)
+    return table_tag
