@@ -17,7 +17,7 @@ setup(
         "docmaptools>=0.12.0",
         "elifetools",
         "elifearticle>=0.15.0",
-        "jatsgenerator>=0.6.0",
+        "jatsgenerator>=0.7.0",
         "PyYAML>=5.4.1",
         "wand >= 0.5.2",
     ],

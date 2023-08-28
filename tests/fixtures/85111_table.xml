@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<table>
+    <thead>
+        <tr>
+            <th/>
+            <th>Comparison</th>
+            <th>Value compared</th>
+            <th>
+                Mean 1
+                <break/>
+                 (delta 
+                <break/>
+                 shown 
+                <break/>
+                 for paired 
+                <break/>
+                 tests)
+            </th>
+            <th>SD 1</th>
+            <th>
+                Mean 2
+                <break/>
+                 (n/a for 
+                <break/>
+                 paired 
+                <break/>
+                 tests)
+            </th>
+            <th>SD 2</th>
+            <th>Test type</th>
+            <th>
+                P- 
+                <break/>
+                 value
+            </th>
+            <th>
+                N
+                <break/>
+                 (ROIs)
+            </th>
+            <th>
+                N
+                <break/>
+                 (Sites)
+            </th>
+            <th>
+                N
+                <break/>
+                 (Mice
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1D</td>
+            <td>
+                Mean response 
+                <break/>
+                 vs zero
+            </td>
+            <td>
+                Playback halt response 
+                <break/>
+                 (stationary) [%Delta F//F]
+            </td>
+            <td>-1.07</td>
+            <td>1.71</td>
+            <td>n/a</td>
+            <td>n/a</td>
+            <td>Paired t-test</td>
+            <td>0.0045</td>
+            <td>n/a</td>
+            <td>25</td>
+            <td>10</td>
+        </tr>
+        <tr>
+            <td/>
+            <td>
+                Mismatch vs 
+                <break/>
+                 Playback halt 
+                <break/>
+                 (locomotion)
+            </td>
+            <td>Mean response [%Delta F//F]</td>
+            <td>2.24</td>
+            <td>2.30</td>
+            <td>0.64</td>
+            <td>3.51</td>
+            <td>Rank-sum</td>
+            <td>0.0497</td>
+            <td>n//a</td>
+            <td>40,24</td>
+            <td>13,10</td>
+        </tr>
+        <tr>
+            <td/>
+            <td>
+                Playback halt 
+                <break/>
+                 locomotion vs 
+                <break/>
+                 stationary
+            </td>
+            <td>Mean response [%Delta F//F]</td>
+            <td>0.64</td>
+            <td>3.51</td>
+            <td>-1.07</td>
+            <td>1.71</td>
+            <td>Rank-sum</td>
+            <td>0.0080</td>
+            <td>n//a</td>
+            <td>24,25</td>
+            <td>10,10</td>
+        </tr>
+        <tr>
+            <td/>
+            <td>
+                Mean response 
+                <break/>
+                 vs zero
+            </td>
+            <td>
+                Playback halt response 
+                <break/>
+                 (locomotion) [%DeltaF//F]
+            </td>
+            <td>0.64</td>
+            <td>3.51</td>
+            <td>n//a</td>
+            <td>n/a</td>
+            <td>Paired t-test</td>
+            <td>0.3841</td>
+            <td>n/a</td>
+            <td>24</td>
+            <td>10</td>
+        </tr>
+        <tr>
+            <td/>
+            <td>
+                Mean response 
+                <break/>
+                 vs zero
+            </td>
+            <td>
+                Mismatch response 
+                <break/>
+                [%DeltaF//F]
+            </td>
+            <td>2.24</td>
+            <td>2.30</td>
+            <td>n/a</td>
+            <td>n//a</td>
+            <td>
+                Paired 
+                <break/>
+                 t-test
+            </td>
+            <td>&lt; 10^(-5)</td>
+            <td>n//a</td>
+            <td>40</td>
+            <td>13</td>
+        </tr>
+        <tr>
+            <td/>
+            <td>
+                Mismatch vs 
+                <break/>
+                 Playback halt 
+                <break/>
+                 (stationary)
+            </td>
+            <td>Mean response [%DeltaF//F]</td>
+            <td>2.24</td>
+            <td>2.30</td>
+            <td>-1.07</td>
+            <td>1.71</td>
+            <td>
+                Unpaired 
+                <break/>
+                 t-test
+            </td>
+            <td>&lt; 10^(-5)</td>
+            <td>n//a</td>
+            <td>40,25</td>
+            <td>13,10</td>
+        </tr>
+        <tr>
+            <td>16</td>
+            <td>
+                Mean response 
+                <break/>
+                 vs zero
+            </td>
+            <td>
+                Visual flow response 
+                <break/>
+                 (stationary) [%Delta F//F]
+            </td>
+            <td>3.19</td>
+            <td>5.31</td>
+            <td>n//a</td>
+            <td>n//a</td>
+            <td>
+                Signed-rank 
+                <break/>
+                 test
+            </td>
+            <td>0.0031</td>
+            <td>n/a</td>
+            <td>28</td>
+            <td>11</td>
+        </tr>
+        <tr>
+            <td/>
+            <td>
+                Locomotion vs 
+                <break/>
+                 stationary
+            </td>
+            <td>
+                Mean visual response 
+                <break/>
+                [%DeltaF//F]
+            </td>
+            <td>-0.55</td>
+            <td>4.24</td>
+            <td>3.19</td>
+            <td>5.31</td>
+            <td>Rank-sum</td>
+            <td>0.0133</td>
+            <td>n/a</td>
+            <td>21,28</td>
+            <td>11,11</td>
+        </tr>
+        <tr>
+            <td/>
+            <td>
+                Mean response 
+                <break/>
+                 vs zero
+            </td>
+            <td>
+                Visual flow response 
+                <break/>
+                 (locomoting) [%Delta F//F]
+            </td>
+            <td>-0.55</td>
+            <td>4.24</td>
+            <td>n/a</td>
+            <td>n//a</td>
+            <td>Paired t-test</td>
+            <td>0.5598</td>
+            <td>n//a</td>
+            <td>21</td>
+            <td>11</td>
+        </tr>
+    </tbody>
+</table>
