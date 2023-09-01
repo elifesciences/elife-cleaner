@@ -80,3 +80,11 @@ def namespace_string():
             for attrib_name, attrib_value in NAMESPACE_MAP.items()
         ]
     )
+
+
+def remove_tags(xml_root, tag_name):
+    "remove tags with name tag_name from ElementTree"
+    for tag_parent in xml_root.findall(".//%s/.." % tag_name):
+        for tag in tag_parent.findall(tag_name):
+            tag_parent.remove(tag)
+    return xml_root

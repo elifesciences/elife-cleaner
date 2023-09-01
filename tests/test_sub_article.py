@@ -590,6 +590,7 @@ class TestFormatContentJson(unittest.TestCase):
                     b"<li>Third <em>point</em>.</li>"
                     b"<li>Fourth point.</li>"
                     b"</ol>"
+                    b"<hr/>"
                     b"<p>About the third and fourth points.</p>"
                 ),
             },
