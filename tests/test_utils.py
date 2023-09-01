@@ -76,3 +76,21 @@ class TestOpenTag(unittest.TestCase):
         attr = {"id": "sa2fig1", "ref-type": "fig"}
         expected = '<xref id="sa2fig1" ref-type="fig">'
         self.assertEqual(utils.open_tag(tag_name, attr), expected)
+
+
+class TestRemoveTags(unittest.TestCase):
+    "tests for utils.remove_tags()"
+
+    def test_remove_tags(self):
+        xml_string = "<root><hr/></root>"
+        expected = b"<root />"
+        xml_root = ElementTree.fromstring(xml_string)
+        result = utils.remove_tags(xml_root, "hr")
+        self.assertEqual(ElementTree.tostring(result), expected)
+
+    def test_complicated_remove_tags(self):
+        xml_string = "<root><hr/><p><hr/></p></root>"
+        expected = b"<root><p /></root>"
+        xml_root = ElementTree.fromstring(xml_string)
+        result = utils.remove_tags(xml_root, "hr")
+        self.assertEqual(ElementTree.tostring(result), expected)

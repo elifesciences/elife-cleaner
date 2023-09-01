@@ -5,7 +5,7 @@ from xml.etree.ElementTree import Element, SubElement
 from elifearticle.article import Article, Contributor, Role
 from docmaptools import parse as docmap_parse
 from jatsgenerator import build
-from elifecleaner import assessment_terms, LOGGER, parse
+from elifecleaner import assessment_terms, LOGGER, parse, utils
 
 XML_NAMESPACES = {
     "ali": "http://www.niso.org/schemas/ali/1.0/",
@@ -227,6 +227,9 @@ def format_content_json(content_json, article_object):
     for index, content in enumerate(content_json):
 
         xml_root = ElementTree.fromstring(content.get("xml"))
+        # remove hr tags
+        xml_root = utils.remove_tags(xml_root, "hr")
+
         sub_article_object = build_sub_article_object(
             article_object, xml_root, content, index
         )
