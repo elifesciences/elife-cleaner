@@ -246,6 +246,9 @@ class TestSubArticleData(unittest.TestCase):
         )
         docmap_string = read_fixture("2021.06.02.446694.docmap.json", mode="r")
         article = Article("10.7554/eLife.79713.1")
+        # add an Editor ot the article
+        editor = Contributor("assoc_ed", "Itor", "Ed")
+        article.editors.append(editor)
         # invoke
         sub_article_data = sub_article.sub_article_data(docmap_string, article)
         # assertions
@@ -260,6 +263,11 @@ class TestSubArticleData(unittest.TestCase):
         self.assertEqual(sub_article_data[0].get("article").doi, "%s.sa0" % article.doi)
         self.assertEqual(
             sub_article_data[0].get("article").title, article_title.decode("utf8")
+        )
+        # editors of editor-report
+        self.assertEqual(len(sub_article_data[0].get("article").contributors), 1)
+        self.assertEqual(
+            sub_article_data[0].get("article").contributors[0].surname, "Itor"
         )
         # assertions for XML root
         self.assertIsNotNone(
