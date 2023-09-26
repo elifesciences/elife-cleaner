@@ -116,10 +116,17 @@ def sub_article_contributors(article_object, sub_article_object, participants=No
             for participant in participants:
                 if participant.get("role") == "editor":
                     actor = participant.get("actor")
-                    first_name = " ".join([name_part for name_part in [actor.get("firstName"), actor.get("_middleName")] if name_part])
-                    author = Contributor(
-                        "author", actor.get("surname"), first_name
+                    first_name = " ".join(
+                        [
+                            name_part
+                            for name_part in [
+                                actor.get("firstName"),
+                                actor.get("_middleName"),
+                            ]
+                            if name_part
+                        ]
                     )
+                    author = Contributor("author", actor.get("surname"), first_name)
                     author.roles = [Role("Reviewing Editor", "editor")]
                     sub_article_object.contributors.append(author)
     if sub_article_object.article_type == "referee-report":
