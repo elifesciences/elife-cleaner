@@ -99,18 +99,36 @@ def sub_article_doi(article_doi, index):
 EDITOR_REPORT_CONTRIB_TYPES = ["assoc_ed"]
 
 
-def sub_article_contributors(article_object, sub_article_object):
+def sub_article_contributors(article_object, sub_article_object, participants=None):
     "add contributors to the sub-article from the parent article depending on the article type"
     if sub_article_object.article_type == "editor-report":
         # add editors of the article as authors of the sub-article
-        for editor in article_object.editors:
-            if editor.contrib_type not in EDITOR_REPORT_CONTRIB_TYPES:
-                continue
-            author = copy.copy(editor)
-            author.contrib_type = "author"
-            if not author.roles:
-                author.roles = [Role("Reviewing Editor", "editor")]
-            sub_article_object.contributors.append(author)
+        if article_object.editors:
+            for editor in article_object.editors:
+                if editor.contrib_type not in EDITOR_REPORT_CONTRIB_TYPES:
+                    continue
+                author = copy.copy(editor)
+                author.contrib_type = "author"
+                if not author.roles:
+                    author.roles = [Role("Reviewing Editor", "editor")]
+                sub_article_object.contributors.append(author)
+        elif participants:
+            for participant in participants:
+                if participant.get("role") == "editor":
+                    actor = participant.get("actor")
+                    first_name = " ".join(
+                        [
+                            name_part
+                            for name_part in [
+                                actor.get("firstName"),
+                                actor.get("_middleName"),
+                            ]
+                            if name_part
+                        ]
+                    )
+                    author = Contributor("author", actor.get("surname"), first_name)
+                    author.roles = [Role("Reviewing Editor", "editor")]
+                    sub_article_object.contributors.append(author)
     if sub_article_object.article_type == "referee-report":
         # one anonymous author per referee-report
         anonymous_author = Contributor("author", None, None)
@@ -137,7 +155,9 @@ def build_sub_article_object(article_object, xml_root, content, index):
     sub_article_object.article_type = ARTICLE_TYPE_MAP.get(
         content.get("type"), content.get("type")
     )
-    sub_article_contributors(article_object, sub_article_object)
+    sub_article_contributors(
+        article_object, sub_article_object, content.get("participants")
+    )
     # take the article title from the XML
     article_title_tag = xml_root.find(".//front-stub/title-group/article-title")
     if article_title_tag is not None:
