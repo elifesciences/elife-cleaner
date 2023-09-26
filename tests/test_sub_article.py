@@ -30,20 +30,60 @@ CONTENT_JSON = [
         "type": "evaluation-summary",
         "html": b"<p><strong>%s</strong></p><p>Test evaluation summary.</p>"
         % ARTICLE_TITLES[0],
+        "participants": [
+            {
+                "actor": {
+                    "type": "person",
+                    "name": "Gary Yellen",
+                    "firstName": "Gary",
+                    "surname": "Yellen",
+                    "_relatesToOrganization": "Harvard Medical School, United States of America",
+                    "affiliation": {
+                        "type": "organization",
+                        "name": "Harvard Medical School",
+                        "location": "Boston, United States of America",
+                    },
+                },
+                "role": "editor",
+            },
+            {
+                "actor": {
+                    "type": "person",
+                    "name": "David James",
+                    "firstName": "David",
+                    "_middleName": "E",
+                    "surname": "James",
+                    "_relatesToOrganization": "University of Sydney, Australia",
+                    "affiliation": {
+                        "type": "organization",
+                        "name": "University of Sydney",
+                        "location": "Sydney, Australia",
+                    },
+                },
+                "role": "senior-editor",
+            },
+        ],
     },
     {
         "type": "review-article",
         "html": b"<p><strong>%s</strong></p><p>Test review article.</p>"
         % ARTICLE_TITLES[1],
+        "participants": [
+            {"actor": {"name": "anonymous", "type": "person"}, "role": "peer-reviewer"}
+        ],
     },
     {
         "type": "reply",
         "html": b"<p><strong>%s</strong></p><p>Test reply.</p>" % ARTICLE_TITLES[2],
+        "participants": [],
     },
     {
         "type": "review-article",
         "html": b"<p><strong>%s</strong></p><p>Test consensus review article.</p>"
         % ARTICLE_TITLES[3],
+        "participants": [
+            {"actor": {"name": "anonymous", "type": "person"}, "role": "peer-reviewer"}
+        ],
     },
 ]
 
@@ -314,6 +354,24 @@ class TestSubArticleContributors(unittest.TestCase):
         self.assertEqual(len(sub_article_object.contributors), 1)
         self.assertEqual(sub_article_object.contributors[0].given_name, "Ed")
 
+    def test_editor_participants(self):
+        "test if participants data is supplied and article has no editors"
+        self.article_object.editors = []
+        sub_article_object = Article()
+        sub_article_object.article_type = "editor-report"
+        participants = [
+            {
+                "actor": {"surname": "Tor", "firstName": "Ed", "_middleName": "I"},
+                "role": "editor",
+            }
+        ]
+        sub_article.sub_article_contributors(
+            self.article_object, sub_article_object, participants
+        )
+        self.assertEqual(len(sub_article_object.contributors), 1)
+        self.assertEqual(sub_article_object.contributors[0].given_name, "Ed I")
+        self.assertEqual(sub_article_object.contributors[0].surname, "Tor")
+
     def test_referee_report(self):
         "test referee-report article type"
         sub_article_object = Article()
@@ -536,6 +594,10 @@ class TestFormatContentJson(unittest.TestCase):
             article_0.contributors[0].roles[0].specific_use,
             "editor",
         )
+        self.assertEqual(
+            article_0.contributors[0].surname,
+            "Editor",
+        )
         # article 1
         article_1 = sub_article_data[1].get("article")
         self.assertEqual(article_1.article_type, "referee-report")
@@ -576,6 +638,17 @@ class TestFormatContentJson(unittest.TestCase):
         body_tag = sub_article_data[0].get("xml_root").find(".//body")
         self.assertIsNotNone(body_tag)
         self.assertEqual(body_tag.find("p").text, "Test evaluation summary.")
+
+    def test_docmap_editor(self):
+        "test if the editor is taken from the docmap content and not from the Article"
+        article = Article("10.7554/eLife.79713.1")
+        # invoke
+        sub_article_data = sub_article.format_content_json(CONTENT_JSON, article)
+        article_0 = sub_article_data[0].get("article")
+        self.assertEqual(
+            article_0.contributors[0].surname,
+            "Yellen",
+        )
 
     def test_modify_list(self):
         "test modifying a variety of list tags"
