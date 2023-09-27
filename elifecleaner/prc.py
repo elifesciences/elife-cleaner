@@ -286,59 +286,23 @@ def volume_from_docmap(docmap_string, identifier=None):
             identifier,
         )
         return None
-    history_data = docmap_parse.docmap_preprint_history(d_json)
-    if not history_data:
-        LOGGER.warning(
-            "%s no history data from the docmap",
-            identifier,
-        )
-        return None
-    return volume_from_history_data(history_data, identifier)
+    preprint_data = docmap_parse.docmap_latest_preprint(d_json)
+    volume = None
+    if (
+        preprint_data
+        and preprint_data.get("partOf")
+        and preprint_data.get("partOf").get("volumeIdentifier")
+    ):
+        volume = int(preprint_data.get("partOf").get("volumeIdentifier"))
 
-
-# year of first publication, used for calculating volume
-START_YEAR = 2011
-
-
-def volume_from_history_data(history_data, identifier=None):
-    "from history data, calculate the volume from the first reviewed preprint"
-    if not history_data:
+    if not volume:
         LOGGER.warning(
-            "%s no history_data",
-            identifier,
-        )
-        return None
-    LOGGER.info(
-        "%s get first reviewed-preprint history event from the history_data", identifier
-    )
-    reviewed_preprint_event_data = None
-    for event_data in history_data:
-        if event_data.get("type") == "reviewed-preprint":
-            reviewed_preprint_event_data = event_data
-            break
-    if not reviewed_preprint_event_data:
-        LOGGER.warning(
-            "%s no reviewed-preprint event found",
-            identifier,
-        )
-        return None
-    if not reviewed_preprint_event_data.get("date"):
-        LOGGER.warning(
-            "%s first reviewed-preprint event has no published date",
+            "%s no volumeIdentifier found in the docmap",
             identifier,
         )
         return None
 
-    # get the date from the event data
-    date_struct = date_struct_from_string(reviewed_preprint_event_data.get("date"))
-    if not date_struct:
-        LOGGER.warning(
-            "%s could not parse date from the reviewed-preprint event",
-            identifier,
-        )
-        return None
-    year = date_struct[0]
-    return year - START_YEAR
+    return volume
 
 
 def date_struct_from_string(date_string):
