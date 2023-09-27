@@ -343,9 +343,18 @@ def docmap_test_data(doi=None):
                             {
                                 "type": "preprint",
                                 "identifier": "85111",
-                                "versionIdentifier": "2",
+                                "versionIdentifier": "1",
                                 "license": "http://creativecommons.org/licenses/by/4.0/",
-                                "published": "2023-05-10T14:00:00+00:00",
+                                "published": "2023-01-25T14:00:00+00:00",
+                                "partOf": {
+                                    "type": "manuscript",
+                                    "doi": "10.7554/eLife.85111",
+                                    "identifier": "85111",
+                                    "subjectDisciplines": ["Neuroscience"],
+                                    "published": "2023-01-25T14:00:00+00:00",
+                                    "volumeIdentifier": "12",
+                                    "electronicArticleIdentifier": "RP85111",
+                                },
                             }
                         ]
                     },
@@ -653,14 +662,6 @@ class TestVolumeFromDocmap(unittest.TestCase):
             log_messages[0],
             ("INFO elifecleaner:prc:volume_from_docmap: " "Parse docmap json\n"),
         )
-        self.assertEqual(
-            log_messages[1],
-            (
-                "INFO elifecleaner:prc:volume_from_history_data: "
-                "%s get first reviewed-preprint history event from the history_data\n"
-            )
-            % self.identifier,
-        )
 
     def test_no_history_data(self):
         "test if no history data can be found in the docmap"
@@ -678,7 +679,7 @@ class TestVolumeFromDocmap(unittest.TestCase):
                 log_messages[-1],
                 (
                     "WARNING elifecleaner:prc:volume_from_docmap: "
-                    "%s no history data from the docmap\n"
+                    "%s no volumeIdentifier found in the docmap\n"
                 )
                 % self.identifier,
             )
@@ -700,115 +701,6 @@ class TestVolumeFromDocmap(unittest.TestCase):
                 )
                 % self.identifier,
             )
-
-
-class TestVolumeFromHistoryData(unittest.TestCase):
-    "tests for prc.volume_from_history_data()"
-
-    def setUp(self):
-        self.temp_dir = "tests/tmp"
-        self.log_file = os.path.join(self.temp_dir, "test.log")
-        self.log_handler = configure_logging(self.log_file)
-        self.identifier = "test.zip"
-
-    def tearDown(self):
-        LOGGER.removeHandler(self.log_handler)
-        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
-
-    def test_volume_from_history_data(self):
-        "calculate the volume from history data"
-        history_data = [{"type": "reviewed-preprint", "date": "2023-01-01"}]
-        expected = 12
-        # invoke
-        volume = prc.volume_from_history_data(history_data, self.identifier)
-        # assert
-        self.assertEqual(volume, expected)
-        with open(self.log_file, "r") as open_file:
-            log_messages = open_file.readlines()
-        self.assertEqual(
-            log_messages[0],
-            (
-                "INFO elifecleaner:prc:volume_from_history_data: "
-                "%s get first reviewed-preprint history event from the history_data\n"
-            )
-            % self.identifier,
-        )
-
-    def test_no_date(self):
-        "test if there is no date to parse"
-        history_data = [{"type": "reviewed-preprint"}]
-        expected = None
-        # invoke
-        volume = prc.volume_from_history_data(history_data, self.identifier)
-        # assert
-        self.assertEqual(volume, expected)
-        with open(self.log_file, "r") as open_file:
-            log_messages = open_file.readlines()
-        self.assertEqual(
-            log_messages[-1],
-            (
-                "WARNING elifecleaner:prc:volume_from_history_data: "
-                "%s first reviewed-preprint event has no published date\n"
-            )
-            % self.identifier,
-        )
-
-    def test_bad_date(self):
-        "test if the date cannot be parsed"
-        history_data = [{"type": "reviewed-preprint", "date": "not_a_date"}]
-        expected = None
-        # invoke
-        volume = prc.volume_from_history_data(history_data, self.identifier)
-        # assert
-        self.assertEqual(volume, expected)
-        with open(self.log_file, "r") as open_file:
-            log_messages = open_file.readlines()
-        self.assertEqual(
-            log_messages[-1],
-            (
-                "WARNING elifecleaner:prc:volume_from_history_data: "
-                "%s could not parse date from the reviewed-preprint event\n"
-            )
-            % self.identifier,
-        )
-
-    def test_no_reviewed_preprint(self):
-        "test if there is no reviewed-preprint event"
-        history_data = [{"type": "preprint", "date": "2023-01-01"}]
-        expected = None
-        # invoke
-        volume = prc.volume_from_history_data(history_data, self.identifier)
-        # assert
-        self.assertEqual(volume, expected)
-        with open(self.log_file, "r") as open_file:
-            log_messages = open_file.readlines()
-        self.assertEqual(
-            log_messages[-1],
-            (
-                "WARNING elifecleaner:prc:volume_from_history_data: "
-                "%s no reviewed-preprint event found\n"
-            )
-            % self.identifier,
-        )
-
-    def test_none(self):
-        "test if history_data is None"
-        history_data = None
-        expected = None
-        # invoke
-        volume = prc.volume_from_history_data(history_data, self.identifier)
-        # assert
-        self.assertEqual(volume, expected)
-        with open(self.log_file, "r") as open_file:
-            log_messages = open_file.readlines()
-        self.assertEqual(
-            log_messages[-1],
-            (
-                "WARNING elifecleaner:prc:volume_from_history_data: "
-                "%s no history_data\n"
-            )
-            % self.identifier,
-        )
 
 
 class TestDateStructFromString(unittest.TestCase):
