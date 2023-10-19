@@ -74,12 +74,12 @@ def add_sub_article_xml(docmap_string, article_xml):
     return root
 
 
-def sub_article_data(docmap_string, article):
+def sub_article_data(docmap_string, article, version_doi=None):
     "parse docmap, get the HTML for each article, and format the content"
     LOGGER.info("Parsing docmap json")
     d_json = docmap_parse.docmap_json(docmap_string)
     LOGGER.info("Collecting content_json")
-    content_json = docmap_parse.docmap_content(d_json)
+    content_json = docmap_parse.docmap_content(d_json, version_doi)
     LOGGER.info("Downloading HTML for each web-content URL")
     content_json = docmap_parse.populate_docmap_content(content_json)
     LOGGER.info("Formatting content json into article and XML data")
