@@ -74,7 +74,7 @@ def add_sub_article_xml(docmap_string, article_xml):
     return root
 
 
-def sub_article_data(docmap_string, article, version_doi=None):
+def sub_article_data(docmap_string, article, version_doi=None, generate_dois=True):
     "parse docmap, get the HTML for each article, and format the content"
     LOGGER.info("Parsing docmap json")
     d_json = docmap_parse.docmap_json(docmap_string)
@@ -83,7 +83,7 @@ def sub_article_data(docmap_string, article, version_doi=None):
     LOGGER.info("Downloading HTML for each web-content URL")
     content_json = docmap_parse.populate_docmap_content(content_json)
     LOGGER.info("Formatting content json into article and XML data")
-    return format_content_json(content_json, article)
+    return format_content_json(content_json, article, generate_dois)
 
 
 def sub_article_id(index):
@@ -233,7 +233,7 @@ def transform_ordered_lists(content_json):
     return content_json
 
 
-def format_content_json(content_json, article_object):
+def format_content_json(content_json, article_object, generate_dois=True):
     data = []
     # parse html to xml
     content_json = docmap_parse.transform_docmap_content(content_json)
@@ -253,6 +253,10 @@ def format_content_json(content_json, article_object):
         sub_article_object = build_sub_article_object(
             article_object, xml_root, content, index
         )
+
+        if not generate_dois:
+            # reset the DOI to the one from the docmap content
+            sub_article_object.doi = content.get("doi")
 
         data.append(
             {
