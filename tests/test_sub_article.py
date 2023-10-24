@@ -28,6 +28,7 @@ CONTENT_JSON = [
     {"type": "preprint"},
     {
         "type": "evaluation-summary",
+        "doi": "10.7554/eLife.79713.1.sa3",
         "html": b"<p><strong>%s</strong></p><p>Test evaluation summary.</p>"
         % ARTICLE_TITLES[0],
         "participants": [
@@ -66,6 +67,7 @@ CONTENT_JSON = [
     },
     {
         "type": "review-article",
+        "doi": "10.7554/eLife.79713.1.sa2",
         "html": b"<p><strong>%s</strong></p><p>Test review article.</p>"
         % ARTICLE_TITLES[1],
         "participants": [
@@ -74,11 +76,13 @@ CONTENT_JSON = [
     },
     {
         "type": "reply",
+        "doi": "10.7554/eLife.79713.1.sa0",
         "html": b"<p><strong>%s</strong></p><p>Test reply.</p>" % ARTICLE_TITLES[2],
         "participants": [],
     },
     {
         "type": "review-article",
+        "doi": "10.7554/eLife.79713.1.sa1",
         "html": b"<p><strong>%s</strong></p><p>Test consensus review article.</p>"
         % ARTICLE_TITLES[3],
         "participants": [
@@ -408,7 +412,7 @@ class TestBuildSubArticleObject(unittest.TestCase):
             b"<article-title>Title</article-title>"
             b"</title-group></front-stub></article>"
         )
-        content = {"type": "review-article"}
+        content = {"type": "review-article", "doi": "10.7554/eLife.79713.1.sa3"}
         index = 1
         sub_article_object = sub_article.build_sub_article_object(
             article_object, xml_root, content, index
@@ -601,6 +605,7 @@ class TestFormatContentJson(unittest.TestCase):
         # article 1
         article_1 = sub_article_data[1].get("article")
         self.assertEqual(article_1.article_type, "referee-report")
+        self.assertEqual(article_1.doi, "%s.sa1" % article.doi)
         # article 1 contributors
         self.assertEqual(len(article_1.contributors), 1)
         # article 1 contrib 0
@@ -613,6 +618,7 @@ class TestFormatContentJson(unittest.TestCase):
         # article 2
         article_2 = sub_article_data[2].get("article")
         self.assertEqual(article_2.article_type, "referee-report")
+        self.assertEqual(article_2.doi, "%s.sa2" % article.doi)
         # article 2 contributors
         self.assertEqual(len(article_2.contributors), 1)
         # article 2 contrib 0
@@ -625,6 +631,7 @@ class TestFormatContentJson(unittest.TestCase):
         # article 3
         article_3 = sub_article_data[3].get("article")
         self.assertEqual(article_3.article_type, "author-comment")
+        self.assertEqual(article_3.doi, "%s.sa3" % article.doi)
         # article 3 contributors
         self.assertEqual(len(article_3.contributors), 1)
         # article 3 contrib 0
@@ -638,6 +645,29 @@ class TestFormatContentJson(unittest.TestCase):
         body_tag = sub_article_data[0].get("xml_root").find(".//body")
         self.assertIsNotNone(body_tag)
         self.assertEqual(body_tag.find("p").text, "Test evaluation summary.")
+
+    def test_not_generate_dois(self):
+        "test if DOIs are copied from the docmap instead of generated"
+        article = Article("10.7554/eLife.79713.1")
+        article.contributors = [Contributor("author", "Surname", "Given")]
+        article.editors = [Contributor("assoc_ed", "Editor", "Given")]
+        # invoke
+        sub_article_data = sub_article.format_content_json(
+            CONTENT_JSON, article, generate_dois=False
+        )
+        # assertions
+        self.assertEqual(
+            sub_article_data[0].get("article").doi, "10.7554/eLife.79713.1.sa3"
+        )
+        self.assertEqual(
+            sub_article_data[1].get("article").doi, "10.7554/eLife.79713.1.sa1"
+        )
+        self.assertEqual(
+            sub_article_data[2].get("article").doi, "10.7554/eLife.79713.1.sa2"
+        )
+        self.assertEqual(
+            sub_article_data[3].get("article").doi, "10.7554/eLife.79713.1.sa0"
+        )
 
     def test_docmap_editor(self):
         "test if the editor is taken from the docmap content and not from the Article"
