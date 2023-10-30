@@ -1,0 +1,36 @@
+<article>
+    <front>
+        <article-meta>
+            <files>
+                <file file-type='merged_pdf' id='1128853'>
+                <upload_file_nm>30-01-2019-RA-eLife-45644.pdf</upload_file_nm>
+                <order>1</order>
+                <size units='bytes'>9740380</size>
+                </file>
+                <file file-type='cover_art' id='1119364'>
+                <upload_file_nm>Potential striking image.tif</upload_file_nm>
+                <order>2</order>
+                <size units='bytes'>2655394</size>
+                <custom-meta>
+                    <meta-name>Title</meta-name>
+                    <meta-value>Potential Striking Image</meta-value>
+                </custom-meta>
+                </file>
+                <file file-type='author_info_file' id='1119346'>
+                <upload_file_nm>Answers for the eLife digest.docx</upload_file_nm>
+                <order>3</order>
+                <size units='bytes'>16699</size>
+                <custom-meta>
+                    <meta-name>Title</meta-name>
+                    <meta-value>Answers for the eLife Digest</meta-value>
+                </custom-meta>
+                </file>
+                <file file-type='art_file' id='1115102'>
+                <upload_file_nm>Manuscript.docx</upload_file_nm>
+                <order>4</order>
+                <size units='bytes'>79733</size>
+                </file>
+            </files>
+        </article-meta>
+    </front>
+</article>

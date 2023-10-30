@@ -1,6 +1,7 @@
 import copy
 from xml.etree.ElementTree import SubElement
 import os
+import string
 import zipfile
 from elifetools import xmlio
 from elifetools import parseJATS as parser
@@ -113,6 +114,70 @@ def code_file_zip(file_transformations, output_dir, identifier):
             "%s zipping from_file: %s, to_file: %s", identifier, from_file, to_file
         )
         to_file = zip_code_file(from_file, output_dir)
+
+
+def cover_art_file_list(root):
+    'get a list of cover_art from the XML with @file-type="cover_art"'
+    files = parse.file_list(root)
+    return [
+        file_data for file_data in files if file_data.get("file_type") == "cover_art"
+    ]
+
+
+def transform_cover_art_files(
+    xml_file_path, asset_file_name_map, file_transformations, identifier
+):
+    "rename cover art files"
+    # create a new asset map
+    new_asset_file_name_map = transform_asset_file_name_map(
+        asset_file_name_map, file_transformations
+    )
+
+    xml_rewrite_file_tags(xml_file_path, file_transformations, identifier)
+    return new_asset_file_name_map
+
+
+FILE_NAME_PATTERN = "{article_id}-{index}_striking_image.{extension}"
+
+
+def striking_image_file_name(file_name, article_id, index):
+    "generate a new name for the striking image"
+    # alpha character from the index 0 to 25, supports up to 26 characters
+    alpha_index = list(string.ascii_lowercase)[index]
+    extension = file_name.rsplit(".", 1)[-1]
+    return FILE_NAME_PATTERN.format(
+        article_id=article_id, index=alpha_index, extension=extension
+    )
+
+
+def cover_art_file_transformations(
+    cover_art_files, asset_file_name_map, article_id, identifier
+):
+    file_transformations = []
+    for index, cover_art_file in enumerate(cover_art_files):
+        # list of old file names
+        previous_href = cover_art_file.get("upload_file_nm")
+
+        LOGGER.info("%s cover_art file name: %s", identifier, previous_href)
+        # collect file name data
+        original_file_name, original_file_path = find_in_file_name_map(
+            previous_href, asset_file_name_map
+        )
+
+        from_file = ArticleZipFile(
+            previous_href, original_file_name, original_file_path
+        )
+        LOGGER.info("%s from_file: %s", identifier, from_file)
+        # generate a new file name
+        current_href = striking_image_file_name(previous_href, article_id, index)
+        new_file_name = original_file_name.rsplit("/", 1)[0] + "/" + current_href
+        new_file_path = original_file_path.rsplit("/", 1)[0] + "/" + current_href
+        to_file = ArticleZipFile(current_href, new_file_name, new_file_path)
+        LOGGER.info("%s to_file: %s", identifier, to_file)
+
+        # save the from file to file transformation
+        file_transformations.append((from_file, to_file))
+    return file_transformations
 
 
 def xml_rewrite_file_tags(xml_asset_path, file_transformations, identifier):
