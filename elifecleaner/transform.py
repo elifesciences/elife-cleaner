@@ -137,7 +137,7 @@ def transform_cover_art_files(
     return new_asset_file_name_map
 
 
-FILE_NAME_PATTERN = "{article_id}-{index}_striking_image.{extension}"
+STRIKING_IMAGE_FILE_NAME_PATTERN = "{article_id}-{index}_striking_image.{extension}"
 
 
 def striking_image_file_name(file_name, article_id, index):
@@ -145,7 +145,7 @@ def striking_image_file_name(file_name, article_id, index):
     # alpha character from the index 0 to 25, supports up to 26 characters
     alpha_index = list(string.ascii_lowercase)[index]
     extension = file_name.rsplit(".", 1)[-1]
-    return FILE_NAME_PATTERN.format(
+    return STRIKING_IMAGE_FILE_NAME_PATTERN.format(
         article_id=article_id, index=alpha_index, extension=extension
     )
 
