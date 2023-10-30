@@ -5,7 +5,7 @@ import unittest
 import zipfile
 from xml.etree import ElementTree
 from elifetools import parseJATS as parser
-from elifecleaner import LOGGER, configure_logging, transform
+from elifecleaner import LOGGER, configure_logging, transform, zip_lib
 from elifecleaner.transform import ArticleZipFile, WELLCOME_FUNDING_STATEMENT
 from tests.helpers import delete_files_in_folder, read_fixture
 
@@ -296,6 +296,117 @@ class TestZipCodeFile(unittest.TestCase):
         to_file = transform.zip_code_file(from_file, self.temp_dir)
         # compare ArticleZipFile representation by casting them to str
         self.assertEqual(str(to_file), str(expected))
+
+
+class TestCoverArtFileList(unittest.TestCase):
+    def test_cover_art_file_list(self):
+        xml_string = read_fixture("cover_art_file_list.xml")
+        expected = read_fixture("cover_art_file_list.py")
+        root = ElementTree.fromstring(xml_string)
+        cover_art_files = transform.cover_art_file_list(root)
+        self.assertEqual(cover_art_files, expected)
+
+
+class TestTransformCoverArtFiles(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.zip_file_base = "30-01-2019-RA-eLife-45644"
+        self.zip_file_name = "%s.zip" % self.zip_file_base
+        zip_file = "tests/test_data/%s" % self.zip_file_name
+        self.asset_file_name_map = zip_lib.unzip_zip(zip_file, self.temp_dir)
+        xml_file_name = "%s.xml" % self.zip_file_base
+        self.xml_file_path = os.path.join(
+            self.temp_dir, "30-01-2019-RA-eLife-45644", xml_file_name
+        )
+
+    def tearDown(self):
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_transform_cover_art_files(self):
+        "test transforming cover art file name and modifying the XML"
+        old_file_name = "Potential striking image.tif"
+        new_file_name = "45644-a_striking_image.tif"
+        file_transformations = []
+        from_file = ArticleZipFile(
+            old_file_name,
+            "%s/%s" % (self.zip_file_base, old_file_name),
+            "%s%s/%s" % (self.temp_dir, self.zip_file_base, old_file_name),
+        )
+        to_file = ArticleZipFile(
+            new_file_name,
+            "%s/%s" % (self.zip_file_base, new_file_name),
+            "%s%s/%s" % (self.temp_dir, self.zip_file_base, new_file_name),
+        )
+        file_transformations.append((from_file, to_file))
+        result = transform.transform_cover_art_files(
+            self.xml_file_path,
+            self.asset_file_name_map,
+            file_transformations,
+            self.zip_file_name,
+        )
+        expected_key = "30-01-2019-RA-eLife-45644/45644-a_striking_image.tif"
+        # assert the new file name is in the new asset_key_map
+        self.assertTrue(expected_key in result.keys())
+        # assert on XML file contents
+        with open(self.xml_file_path, "r") as open_file:
+            self.assertTrue(
+                new_file_name in open_file.read(),
+                "Did not find %s in the XML" % new_file_name,
+            )
+            self.assertFalse(
+                old_file_name in open_file.read(),
+                "Unexpectedly found %s in the XML" % old_file_name,
+            )
+
+
+class TestStrikingImageFileName(unittest.TestCase):
+    def test_striking_image_file_name(self):
+        file_name = "test.tif"
+        article_id = "45644"
+        index = 0
+        expected = "45644-a_striking_image.tif"
+        result = transform.striking_image_file_name(file_name, article_id, index)
+        self.assertEqual(result, expected)
+
+
+class TestCoverArtFileTransformations(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.zip_file_base = "30-01-2019-RA-eLife-45644"
+        self.zip_file_name = "%s.zip" % self.zip_file_base
+        zip_file = "tests/test_data/%s" % self.zip_file_name
+        self.article_id = "45644"
+        self.asset_file_name_map = zip_lib.unzip_zip(zip_file, self.temp_dir)
+
+    def tearDown(self):
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_cover_art_file_transformations(self):
+        "create a list of file transformations from old striking image file name to new one"
+        old_file_name = "Potential striking image.tif"
+        new_file_name = "45644-a_striking_image.tif"
+        cover_art_files = [{"upload_file_nm": old_file_name}]
+        expected = [
+            (
+                ArticleZipFile(
+                    old_file_name,
+                    "%s/%s" % (self.zip_file_base, old_file_name),
+                    "%s/%s/%s" % (self.temp_dir, self.zip_file_base, old_file_name),
+                ),
+                ArticleZipFile(
+                    new_file_name,
+                    "%s/%s" % (self.zip_file_base, new_file_name),
+                    "%s/%s/%s" % (self.temp_dir, self.zip_file_base, new_file_name),
+                ),
+            )
+        ]
+        result = transform.cover_art_file_transformations(
+            cover_art_files,
+            self.asset_file_name_map,
+            self.article_id,
+            self.zip_file_name,
+        )
+        self.assertEqual(str(result), str(expected))
 
 
 class TestFromFileToFileMap(unittest.TestCase):
