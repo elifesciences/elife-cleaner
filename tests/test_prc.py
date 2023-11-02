@@ -269,6 +269,80 @@ class TestAddPrcCustomMetaTags(unittest.TestCase):
             )
 
 
+class TestElocationIdFromDocmap(unittest.TestCase):
+    "tests for prc.elocation_id_from_docmap()"
+
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+        self.identifier = "test.zip"
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_elocation_id_from_docmap(self):
+        "get elocation-id from docmap data"
+        docmap_json = docmap_test_data()
+        expected = "RP85111"
+        # invoke
+        elocation_id = prc.elocation_id_from_docmap(
+            json.dumps(docmap_json), self.identifier
+        )
+        # assert
+        self.assertEqual(elocation_id, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+        self.assertEqual(
+            log_messages[0],
+            ("INFO elifecleaner:prc:elocation_id_from_docmap: " "Parse docmap json\n"),
+        )
+
+    def test_no_history_data(self):
+        "test if no history data can be found in the docmap"
+        docmap_json = {"first-step": "_:b0", "steps": {"_:b0": {}}}
+        expected = None
+        # invoke
+        elocation_id = prc.elocation_id_from_docmap(
+            json.dumps(docmap_json), self.identifier
+        )
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+        # assert
+        self.assertEqual(elocation_id, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:elocation_id_from_docmap: "
+                    "%s no electronicArticleIdentifier found in the docmap\n"
+                )
+                % self.identifier,
+            )
+
+    def test_docmap_is_none(self):
+        "test if docmap is empty"
+        docmap_json = {}
+        # invoke
+        elocation_id = prc.elocation_id_from_docmap(
+            json.dumps(docmap_json), self.identifier
+        )
+        # assert
+        self.assertEqual(elocation_id, None)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:elocation_id_from_docmap: "
+                    "%s parsing docmap returned None\n"
+                )
+                % self.identifier,
+            )
+
+
 class TestTransformElocationId(unittest.TestCase):
     def setUp(self):
         self.xml_string_pattern = (
