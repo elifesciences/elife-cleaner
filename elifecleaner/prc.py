@@ -134,6 +134,35 @@ def add_prc_custom_meta_tags(root, identifier=None):
     return root
 
 
+def elocation_id_from_docmap(docmap_string, identifier=None):
+    "from the docmap get the elocation-id volume"
+    LOGGER.info("Parse docmap json")
+    d_json = docmap_parse.docmap_json(docmap_string)
+    if not d_json:
+        LOGGER.warning(
+            "%s parsing docmap returned None",
+            identifier,
+        )
+        return None
+    preprint_data = docmap_parse.docmap_latest_preprint(d_json)
+    elocation_id = None
+    if (
+        preprint_data
+        and preprint_data.get("partOf")
+        and preprint_data.get("partOf").get("electronicArticleIdentifier")
+    ):
+        elocation_id = preprint_data.get("partOf").get("electronicArticleIdentifier")
+
+    if not elocation_id:
+        LOGGER.warning(
+            "%s no electronicArticleIdentifier found in the docmap",
+            identifier,
+        )
+        return None
+
+    return elocation_id
+
+
 ELOCATION_ID_MATCH_PATTERN = r"e(.*)"
 
 ELOCATION_ID_PRC_TERM = "RP"
