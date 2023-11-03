@@ -343,40 +343,6 @@ class TestElocationIdFromDocmap(unittest.TestCase):
             )
 
 
-class TestTransformElocationId(unittest.TestCase):
-    def setUp(self):
-        self.xml_string_pattern = (
-            "<article><front><article-meta>%s</article-meta></front></article>"
-        )
-
-    def test_transform_elocation_id(self):
-        xml_string = (
-            self.xml_string_pattern % "<elocation-id>e1234567890</elocation-id>"
-        )
-        expected = bytes(
-            self.xml_string_pattern % "<elocation-id>RP1234567890</elocation-id>",
-            encoding="utf-8",
-        )
-        identifier = "test.zip"
-        root = ElementTree.fromstring(xml_string)
-        root_output = prc.transform_elocation_id(root, identifier=identifier)
-        self.assertEqual(ElementTree.tostring(root_output), expected)
-
-    def test_no_change(self):
-        xml_string = self.xml_string_pattern % "<elocation-id>foo</elocation-id>"
-        expected = bytes(xml_string, encoding="utf-8")
-        root = ElementTree.fromstring(xml_string)
-        root_output = prc.transform_elocation_id(root)
-        self.assertEqual(ElementTree.tostring(root_output), expected)
-
-    def test_tag_missing(self):
-        xml_string = "<article />"
-        expected = bytes(xml_string, encoding="utf-8")
-        root = ElementTree.fromstring(xml_string)
-        root_output = prc.transform_elocation_id(root)
-        self.assertEqual(ElementTree.tostring(root_output), expected)
-
-
 def docmap_test_data(doi=None):
     "generate a docmap json test fixture"
     docmap_json = {
