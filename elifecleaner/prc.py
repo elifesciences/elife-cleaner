@@ -34,6 +34,9 @@ def yield_journal_id_tags(root, journal_id_types):
             yield journal_id_tag
 
 
+ELOCATION_ID_PRC_TERM = "RP"
+
+
 def is_xml_prc(root):
     "check if the XML is PRC format by comparing journal-id tag text for a mismatch"
     issn_tag = root.find("./front/journal-meta/issn")
@@ -161,38 +164,6 @@ def elocation_id_from_docmap(docmap_string, identifier=None):
         return None
 
     return elocation_id
-
-
-ELOCATION_ID_MATCH_PATTERN = r"e(.*)"
-
-ELOCATION_ID_PRC_TERM = "RP"
-
-ELOCATION_ID_REPLACEMENT_PATTERN = r"%s\1" % ELOCATION_ID_PRC_TERM
-
-
-def transform_elocation_id(
-    root,
-    from_pattern=ELOCATION_ID_MATCH_PATTERN,
-    to_pattern=ELOCATION_ID_REPLACEMENT_PATTERN,
-    identifier=None,
-):
-    "change the elocation-id tag text value"
-    elocation_id_tag = root.find(".//front/article-meta/elocation-id")
-    if elocation_id_tag is not None:
-        match_pattern = re.compile(from_pattern)
-        new_elocation_id = match_pattern.sub(
-            to_pattern,
-            elocation_id_tag.text,
-        )
-        if new_elocation_id != elocation_id_tag.text:
-            LOGGER.info(
-                "%s changing elocation-id value %s to %s",
-                identifier,
-                elocation_id_tag.text,
-                new_elocation_id,
-            )
-            elocation_id_tag.text = new_elocation_id
-    return root
 
 
 def version_doi_from_docmap(docmap_string, identifier=None):
