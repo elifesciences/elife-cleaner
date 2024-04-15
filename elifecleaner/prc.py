@@ -166,7 +166,7 @@ def elocation_id_from_docmap(docmap_string, identifier=None):
     return elocation_id
 
 
-def version_doi_from_docmap(docmap_string, identifier=None):
+def version_doi_from_docmap(docmap_string, identifier=None, published=True):
     "find the latest preprint DOI from docmap"
     doi = None
     LOGGER.info("Parse docmap json")
@@ -178,7 +178,7 @@ def version_doi_from_docmap(docmap_string, identifier=None):
         )
         return doi
     LOGGER.info("Get latest preprint data from the docmap")
-    preprint_data = docmap_parse.docmap_latest_preprint(d_json)
+    preprint_data = docmap_parse.docmap_latest_preprint(d_json, published=published)
     if not preprint_data:
         LOGGER.warning(
             "%s no preprint data was found in the docmap",
