@@ -426,6 +426,15 @@ class TestVersionDoiFromDocmap(unittest.TestCase):
         result = prc.version_doi_from_docmap(json.dumps(docmap_json), self.identifier)
         self.assertEqual(result, doi)
 
+    def test_unpublished_version_doi(self):
+        "test argument published is False"
+        doi = "10.7554/eLife.85111.2"
+        docmap_json = docmap_test_data(doi)
+        # delete the published dict key
+        del docmap_json["steps"]["_:b1"]["actions"][0]["outputs"][0]["published"]
+        result = prc.version_doi_from_docmap(json.dumps(docmap_json), self.identifier, False)
+        self.assertEqual(result, doi)
+
     def test_docmap_is_none(self):
         "test for no docmap"
         docmap_json = {}
