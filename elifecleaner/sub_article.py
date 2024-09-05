@@ -26,7 +26,6 @@ def reorder_review_articles(content_list):
     number_match = re.compile(rb".*<article-title>.*\s+#(\d+)\s+.*")
     content_to_sort = []
     for content in content_list:
-        print(content.get("xml"))
         matches = number_match.match(content.get("xml"))
         if matches:
             content_map = {"num": int(matches[1]), "content": content}
@@ -58,14 +57,14 @@ def reorder_content_json(content_json):
     return content_json
 
 
-def add_sub_article_xml(docmap_string, article_xml):
+def add_sub_article_xml(docmap_string, article_xml, version_doi=None, generate_dois=True):
     "parse content from docmap and add sub-article tags to the article XML"
     LOGGER.info("Parsing article XML into root Element")
     root = parse.parse_article_xml(article_xml)
     LOGGER.info("Parsing article XML into an Article object")
     article, error_count = parse.article_from_xml(article_xml)
     LOGGER.info("Populate sub article data")
-    data = sub_article_data(docmap_string, article)
+    data = sub_article_data(docmap_string, article, version_doi, generate_dois)
     LOGGER.info("Generate sub-article XML")
     sub_article_xml_root = generate(data)
     LOGGER.info("Appending sub-article tags to the XML root")
