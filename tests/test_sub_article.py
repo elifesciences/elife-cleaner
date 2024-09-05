@@ -240,6 +240,8 @@ class TestReorderContentJson(unittest.TestCase):
 
 
 class TestAddSubArticleXml(unittest.TestCase):
+    "tests for add_sub_article_xml()"
+
     def setUp(self):
         self.temp_dir = "tests/tmp"
         self.log_file = os.path.join(self.temp_dir, "test.log")
@@ -264,6 +266,11 @@ class TestAddSubArticleXml(unittest.TestCase):
         article_xml = os.path.join(self.temp_dir, xml_file_name)
         result = sub_article.add_sub_article_xml(docmap_string, article_xml)
         self.assertEqual(len(result.findall(".//sub-article")), 4)
+        # assert DOI value will generated based on the article DOI
+        self.assertTrue(
+            '<article-id pub-id-type="doi">10.7554/eLife.64719.sa0</article-id>'
+            in ElementTree.tostring(result).decode("utf-8")
+        )
         # For now assert each log file message appears, this may need adjustment later
         expected_log_file_lines = [
             "INFO elifecleaner:sub_article:add_sub_article_xml: Parsing article XML into root Element\n",
@@ -280,8 +287,32 @@ class TestAddSubArticleXml(unittest.TestCase):
         for line in expected_log_file_lines:
             self.assertTrue(line in log_file_lines)
 
+    @patch("elifecleaner.sub_article.docmap_parse.populate_docmap_content")
+    @patch("requests.get")
+    def test_generate_dois(self, mock_get, mock_sub_article_data):
+        "test argument generate_dois is False"
+        mock_get.return_value = True
+        mock_sub_article_data.return_value = CONTENT_JSON
+        zip_file = "tests/test_data/08-11-2020-FA-eLife-64719.zip"
+        xml_file_name = "08-11-2020-FA-eLife-64719/08-11-2020-FA-eLife-64719.xml"
+        with zipfile.ZipFile(zip_file, "r") as input_zipfile:
+            input_zipfile.extract(xml_file_name, self.temp_dir)
+        docmap_string = read_fixture("2021.06.02.446694.docmap.json", mode="r")
+        article_xml = os.path.join(self.temp_dir, xml_file_name)
+        result = sub_article.add_sub_article_xml(
+            docmap_string, article_xml, generate_dois=False
+        )
+        self.assertEqual(len(result.findall(".//sub-article")), 4)
+        # assert DOI value will be what is in the docmap test fixture
+        self.assertTrue(
+            '<article-id pub-id-type="doi">10.7554/eLife.79713.1.sa1</article-id>'
+            in ElementTree.tostring(result).decode("utf-8")
+        )
+
 
 class TestSubArticleData(unittest.TestCase):
+    "tests for sub_article_data()"
+
     @patch("requests.get")
     def test_sub_article_data(self, mock_get):
         article_title = b"Evaluation Summary: <italic>test</italic>"
@@ -312,6 +343,38 @@ class TestSubArticleData(unittest.TestCase):
         self.assertEqual(len(sub_article_data[0].get("article").contributors), 1)
         self.assertEqual(
             sub_article_data[0].get("article").contributors[0].surname, "Itor"
+        )
+        # assert DOI is based on the Article DOI
+        self.assertEqual(
+            sub_article_data[0].get("article").doi, "10.7554/eLife.79713.1.sa0"
+        )
+        # assertions for XML root
+        self.assertIsNotNone(
+            sub_article_data[0].get("xml_root").find(".//article-title")
+        )
+
+    @patch("requests.get")
+    def test_preprint_sub_article_data(self, mock_get):
+        "test using version_doi and generate_dois arguments"
+        article_title = b"Evaluation Summary: <italic>test</italic>"
+        mock_get.return_value = FakeResponse(
+            200, content=b"<p><strong>%s</strong></p><p>Test.</p>" % article_title
+        )
+        docmap_string = read_fixture("99854.json", mode="r")
+        version_doi = "10.7554/eLife.99854.1"
+        generate_dois = False
+        # todo !!!! how to generate without an article object ?
+        article = Article(version_doi)
+        # add an Editor ot the article
+        editor = Contributor("assoc_ed", "Itor", "Ed")
+        article.editors.append(editor)
+        # invoke
+        sub_article_data = sub_article.sub_article_data(
+            docmap_string, article, version_doi, generate_dois
+        )
+        # assert DOI is taken from the docmap
+        self.assertEqual(
+            sub_article_data[0].get("article").doi, "10.7554/eLife.99854.1.sa4"
         )
         # assertions for XML root
         self.assertIsNotNone(
