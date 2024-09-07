@@ -200,17 +200,42 @@ def transform_xml(xml_asset_path, identifier):
     write_xml_file(root, xml_asset_path, identifier)
 
 
-def write_xml_file(root, xml_asset_path, identifier):
+def write_xml_file(
+    root,
+    xml_asset_path,
+    identifier,
+    doctype_dict=None,
+    encoding=None,
+    processing_instructions=None,
+):
     # write new XML file
-    xml_string = xml_element_to_string(root)
+    doctype = None
+    if doctype_dict is not None:
+        publicId = doctype_dict.get("pubid")
+        systemId = doctype_dict.get("system")
+        qualifiedName = doctype_dict.get("name")
+        doctype = xmlio.build_doctype(qualifiedName, publicId, systemId)
+    xml_string = xml_element_to_string(
+        root,
+        doctype=doctype,
+        encoding=encoding,
+        processing_instructions=processing_instructions,
+    )
     LOGGER.info("%s writing xml to file %s", identifier, xml_asset_path)
     with open(xml_asset_path, "w") as open_file:
         open_file.write(xml_string)
 
 
-def xml_element_to_string(root):
+def xml_element_to_string(
+    root, doctype=None, encoding=None, processing_instructions=None
+):
     xmlio.register_xmlns()
-    return xmlio.output_root(root, None, None)
+    return xmlio.output_root(
+        root,
+        doctype=doctype,
+        encoding=None,
+        processing_instructions=processing_instructions,
+    )
 
 
 def code_file_list(root):

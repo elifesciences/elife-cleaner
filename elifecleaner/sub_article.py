@@ -355,3 +355,31 @@ def set_contrib(parent, article, contrib_type=None):
                 tail="",
                 institution_wrap=True,
             )
+
+
+def tag_new_line_wrap(element):
+    "wrap the tag in a new line character if it has no text or tail"
+    if not element.text:
+        element.text = "\n"
+    if not element.tail:
+        element.tail = "\n"
+
+
+def pretty_sub_article_xml(root):
+    "add whitespace to make sub-article output more pretty"
+    for sub_article_tag in root.findall(".//sub-article"):
+        tag_new_line_wrap(sub_article_tag)
+        for tag_name in [
+            "article-id",
+            "article-title",
+            "body",
+            "contrib-group",
+            "disp-quote",
+            "front-stub",
+            "name",
+            "p",
+            "role",
+            "title-group",
+        ]:
+            for tag in sub_article_tag.findall(".//%s" % tag_name):
+                tag_new_line_wrap(tag)
