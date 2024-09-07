@@ -911,3 +911,66 @@ class TestGenerate(unittest.TestCase):
         )
         rough_xml_string = ElementTree.tostring(root, "utf-8")
         self.assertEqual(rough_xml_string, expected)
+
+
+class TestPrettySubArticleXml(unittest.TestCase):
+    "tests for pretty_sub_article_xml()"
+
+    def test_pretty_sub_article_xml(self):
+        "test a variety of tags will be appended a new line character"
+        xml = (
+            b"<article>\n"
+            b'<sub-article id="sa0" article-type="editor-report">'
+            b"<front-stub>"
+            b'<article-id pub-id-type="doi">10.7554/eLife.95901.1.sa1</article-id>'
+            b"<title-group>"
+            b"<article-title>Title</article-title>"
+            b"</title-group>"
+            b"<contrib-group>"
+            b'<contrib contrib-type="author"><name>'
+            b"<surname>Surname</surname><given-names>Given</given-names></name>"
+            b'<role specific-use="editor">Reviewing Editor</role>'
+            b"</contrib></contrib-group>"
+            b"</front-stub>"
+            b"<body>"
+            b"<p>The ....</p>"
+            b"</body>"
+            b"</sub-article>"
+            b"</article>"
+        )
+        xml_root = ElementTree.fromstring(xml)
+        expected = (
+            b"<article>\n"
+            b'<sub-article id="sa0" article-type="editor-report">\n'
+            b"<front-stub>\n"
+            b'<article-id pub-id-type="doi">10.7554/eLife.95901.1.sa1</article-id>\n'
+            b"<title-group>\n"
+            b"<article-title>Title</article-title>\n"
+            b"</title-group>\n"
+            b"<contrib-group>\n"
+            b'<contrib contrib-type="author"><name>\n'
+            b"<surname>Surname</surname><given-names>Given</given-names></name>\n"
+            b'<role specific-use="editor">Reviewing Editor</role>\n'
+            b"</contrib></contrib-group>\n"
+            b"</front-stub>\n"
+            b"<body>\n"
+            b"<p>The ....</p>\n"
+            b"</body>\n"
+            b"</sub-article>\n"
+            b"</article>"
+        )
+        # invoke
+        sub_article.pretty_sub_article_xml(xml_root)
+        # assert
+        xml_string = ElementTree.tostring(xml_root)
+        self.assertEqual(xml_string, expected)
+
+    def test_no_sub_article(self):
+        "test no sub-article tag"
+        xml_root = ElementTree.fromstring(b"<article />")
+        expected = b"<article />"
+        # invoke
+        sub_article.pretty_sub_article_xml(xml_root)
+        # assert
+        xml_string = ElementTree.tostring(xml_root)
+        self.assertEqual(xml_string, expected)

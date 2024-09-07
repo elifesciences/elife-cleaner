@@ -5,6 +5,7 @@ import unittest
 import zipfile
 from xml.etree import ElementTree
 from elifetools import parseJATS as parser
+from elifetools import xmlio
 from elifecleaner import LOGGER, configure_logging, transform, zip_lib
 from elifecleaner.transform import ArticleZipFile, WELLCOME_FUNDING_STATEMENT
 from tests.helpers import delete_files_in_folder, read_fixture
@@ -223,6 +224,8 @@ class TestTransform(unittest.TestCase):
 
 
 class TestXmlElementToString(unittest.TestCase):
+    "tests for xml_element_to_string()"
+
     def test_xml_element_to_string(self):
         if sys.version_info < (3, 8):
             # pre Python 3.8 tag attributes are automatically alphabetised
@@ -245,6 +248,33 @@ class TestXmlElementToString(unittest.TestCase):
         root = ElementTree.fromstring(xml_string)
         expected = '<?xml version="1.0" ?>%s' % xml_string
         self.assertEqual(transform.xml_element_to_string(root), expected)
+
+    def test_all_arguments(self):
+        "test using doctype argument and others"
+        xml_string = "<article/>"
+        qualifiedName = "article"
+        publicId = (
+            "-//NLM//DTD JATS (Z39.96) Journal Archiving and"
+            " Interchange DTD v1.3 20210610//EN"
+        )
+        systemId = "JATS-archivearticle1.dtd"
+        internalSubset = None
+        encoding = "UTF-8"
+        processing_instructions = None
+        doctype = xmlio.build_doctype(qualifiedName, publicId, systemId, internalSubset)
+        root = ElementTree.fromstring(xml_string)
+        expected = '<?xml version="1.0" ?><!DOCTYPE %s PUBLIC "%s"  "%s">%s' % (
+            qualifiedName,
+            publicId,
+            systemId,
+            xml_string,
+        )
+        # invoke
+        result = transform.xml_element_to_string(
+            root, doctype, encoding, processing_instructions
+        )
+        # assert
+        self.assertEqual(result, expected)
 
 
 class TestCodeFileList(unittest.TestCase):
