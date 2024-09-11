@@ -57,7 +57,9 @@ def reorder_content_json(content_json):
     return content_json
 
 
-def add_sub_article_xml(docmap_string, article_xml, version_doi=None, generate_dois=True):
+def add_sub_article_xml(
+    docmap_string, article_xml, version_doi=None, generate_dois=True
+):
     "parse content from docmap and add sub-article tags to the article XML"
     LOGGER.info("Parsing article XML into root Element")
     root = parse.parse_article_xml(article_xml)
@@ -357,12 +359,22 @@ def set_contrib(parent, article, contrib_type=None):
             )
 
 
-def tag_new_line_wrap(element):
-    "wrap the tag in a new line character if it has no text or tail"
+def tag_new_line_wrap_text(element):
+    "wrap the tag text with a new line character if it has no text"
     if not element.text:
         element.text = "\n"
+
+
+def tag_new_line_wrap_tail(element):
+    "wrap the tag tail with a new line character if it has no tail"
     if not element.tail:
         element.tail = "\n"
+
+
+def tag_new_line_wrap(element):
+    "wrap the tag in a new line character if it has no text or tail"
+    tag_new_line_wrap_text(element)
+    tag_new_line_wrap_tail(element)
 
 
 def pretty_sub_article_xml(root):
@@ -370,16 +382,27 @@ def pretty_sub_article_xml(root):
     for sub_article_tag in root.findall(".//sub-article"):
         tag_new_line_wrap(sub_article_tag)
         for tag_name in [
+            "aff",
             "article-id",
             "article-title",
             "body",
+            "collab",
+            "contrib",
             "contrib-group",
             "disp-quote",
             "front-stub",
+            "given-names",
+            "kwd",
+            "kwd-group",
             "name",
             "p",
             "role",
+            "surname",
             "title-group",
         ]:
             for tag in sub_article_tag.findall(".//%s" % tag_name):
                 tag_new_line_wrap(tag)
+        # wrap tail only for the following tags
+        for tag_name in ["anonymous", "etal"]:
+            for tag in sub_article_tag.findall(".//%s" % tag_name):
+                tag_new_line_wrap_tail(tag)

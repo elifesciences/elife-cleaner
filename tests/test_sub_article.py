@@ -927,10 +927,18 @@ class TestPrettySubArticleXml(unittest.TestCase):
             b"<article-title>Title</article-title>"
             b"</title-group>"
             b"<contrib-group>"
-            b'<contrib contrib-type="author"><name>'
-            b"<surname>Surname</surname><given-names>Given</given-names></name>"
+            b'<contrib contrib-type="author">'
+            b"<name>"
+            b"<surname>Surname</surname>"
+            b"<given-names>Given</given-names>"
+            b"</name>"
             b'<role specific-use="editor">Reviewing Editor</role>'
-            b"</contrib></contrib-group>"
+            b"</contrib>"
+            b'<contrib contrib-type="author">'
+            b"<anonymous />"
+            b'<role specific-use="referee">Reviewer</role>'
+            b"</contrib>"
+            b"</contrib-group>"
             b"</front-stub>"
             b"<body>"
             b"<p>The ....</p>"
@@ -948,10 +956,18 @@ class TestPrettySubArticleXml(unittest.TestCase):
             b"<article-title>Title</article-title>\n"
             b"</title-group>\n"
             b"<contrib-group>\n"
-            b'<contrib contrib-type="author"><name>\n'
-            b"<surname>Surname</surname><given-names>Given</given-names></name>\n"
+            b'<contrib contrib-type="author">\n'
+            b"<name>\n"
+            b"<surname>Surname</surname>\n"
+            b"<given-names>Given</given-names>\n"
+            b"</name>\n"
             b'<role specific-use="editor">Reviewing Editor</role>\n'
-            b"</contrib></contrib-group>\n"
+            b"</contrib>\n"
+            b'<contrib contrib-type="author">\n'
+            b"<anonymous />\n"
+            b'<role specific-use="referee">Reviewer</role>\n'
+            b"</contrib>\n"
+            b"</contrib-group>\n"
             b"</front-stub>\n"
             b"<body>\n"
             b"<p>The ....</p>\n"
