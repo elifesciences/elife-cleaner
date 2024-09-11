@@ -57,7 +57,9 @@ def reorder_content_json(content_json):
     return content_json
 
 
-def add_sub_article_xml(docmap_string, article_xml, version_doi=None, generate_dois=True):
+def add_sub_article_xml(
+    docmap_string, article_xml, version_doi=None, generate_dois=True
+):
     "parse content from docmap and add sub-article tags to the article XML"
     LOGGER.info("Parsing article XML into root Element")
     root = parse.parse_article_xml(article_xml)
