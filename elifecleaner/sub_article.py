@@ -395,7 +395,6 @@ def pretty_sub_article_xml(root):
             "kwd",
             "kwd-group",
             "name",
-            "p",
             "role",
             "surname",
             "title-group",
@@ -403,6 +402,6 @@ def pretty_sub_article_xml(root):
             for tag in sub_article_tag.findall(".//%s" % tag_name):
                 tag_new_line_wrap(tag)
         # wrap tail only for the following tags
-        for tag_name in ["anonymous", "etal"]:
+        for tag_name in ["anonymous", "etal", "p"]:
             for tag in sub_article_tag.findall(".//%s" % tag_name):
                 tag_new_line_wrap_tail(tag)
