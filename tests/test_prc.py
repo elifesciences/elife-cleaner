@@ -558,6 +558,39 @@ class TestNextVersionDoi(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
+class TestAddArticleId(unittest.TestCase):
+    "tests for add_article_id()"
+
+    def test_add_article_id(self):
+        "test adding concept DOI article-id tag"
+        xml_string = "<article-meta />"
+        root = ElementTree.fromstring(xml_string)
+        doi = "10.7554/eLife.1234567890"
+        pub_id_type = "doi"
+        expected = (
+            "<article-meta>"
+            '<article-id pub-id-type="%s">%s</article-id>'
+            "</article-meta>"
+        ) % (pub_id_type, doi)
+        prc.add_article_id(root, doi, pub_id_type)
+        self.assertEqual(ElementTree.tostring(root).decode("utf-8"), expected)
+
+    def test_version_doi(self):
+        "test adding a version DOI article-id tag"
+        xml_string = "<article-meta />"
+        root = ElementTree.fromstring(xml_string)
+        doi = "10.7554/eLife.1234567890"
+        pub_id_type = "doi"
+        specific_use = "version"
+        expected = (
+            "<article-meta>"
+            '<article-id pub-id-type="%s" specific-use="%s">%s</article-id>'
+            "</article-meta>"
+        ) % (pub_id_type, specific_use, doi)
+        prc.add_article_id(root, doi, pub_id_type, specific_use)
+        self.assertEqual(ElementTree.tostring(root).decode("utf-8"), expected)
+
+
 class TestAddVersionDoi(unittest.TestCase):
     def setUp(self):
         self.temp_dir = "tests/tmp"
@@ -627,7 +660,7 @@ class TestAddVersionDoi(unittest.TestCase):
             self.assertEqual(
                 open_file.read(),
                 (
-                    "WARNING elifecleaner:prc:add_version_doi: "
+                    "WARNING elifecleaner:prc:add_doi: "
                     "%s article-meta tag not found\n"
                 )
                 % self.identifier,
