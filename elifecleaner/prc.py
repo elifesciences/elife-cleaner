@@ -1,4 +1,3 @@
-import re
 import time
 from xml.etree.ElementTree import Element, SubElement
 from docmaptools import parse as docmap_parse
@@ -232,8 +231,24 @@ def next_version_doi(doi, identifier=None):
     return next_doi
 
 
-def add_version_doi(root, doi, identifier=None):
-    "add version article-id tag for the doi to article-meta tag"
+def add_article_id(parent, text, pub_id_type, specific_use=None):
+    "add article-id tag"
+    # add article-id tag
+    article_id_tag = Element("article-id")
+    article_id_tag.set("pub-id-type", pub_id_type)
+    if specific_use:
+        article_id_tag.set("specific-use", specific_use)
+    article_id_tag.text = text
+    # insert the new tag into the XML after the last article-id tag
+    insert_index = 1
+    for tag_index, tag in enumerate(parent.findall("*")):
+        if tag.tag == "article-id":
+            insert_index = tag_index + 1
+    parent.insert(insert_index, article_id_tag)
+
+
+def add_doi(root, doi, specific_use=None, identifier=None):
+    "add article-id tag for the doi to article-meta tag"
     article_meta_tag = root.find(".//front/article-meta")
     if article_meta_tag is None:
         LOGGER.warning(
@@ -241,18 +256,14 @@ def add_version_doi(root, doi, identifier=None):
             identifier,
         )
         return root
-    # add article-id tag
-    article_id_tag = Element("article-id")
-    article_id_tag.set("pub-id-type", "doi")
-    article_id_tag.set("specific-use", "version")
-    article_id_tag.text = doi
-    # insert the new tag into the XML after the last article-id tag
-    insert_index = 1
-    for tag_index, tag in enumerate(article_meta_tag.findall("*")):
-        if tag.tag == "article-id":
-            insert_index = tag_index + 1
-    article_meta_tag.insert(insert_index, article_id_tag)
+    # add version DOI article-id tag
+    add_article_id(article_meta_tag, doi, pub_id_type="doi", specific_use=specific_use)
     return root
+
+
+def add_version_doi(root, doi, identifier=None):
+    "add version article-id tag for the doi to article-meta tag"
+    return add_doi(root, doi, specific_use="version", identifier=identifier)
 
 
 def review_date_from_docmap(docmap_string, identifier=None):
