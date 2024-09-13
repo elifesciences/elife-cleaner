@@ -432,7 +432,9 @@ class TestVersionDoiFromDocmap(unittest.TestCase):
         docmap_json = docmap_test_data(doi)
         # delete the published dict key
         del docmap_json["steps"]["_:b1"]["actions"][0]["outputs"][0]["published"]
-        result = prc.version_doi_from_docmap(json.dumps(docmap_json), self.identifier, False)
+        result = prc.version_doi_from_docmap(
+            json.dumps(docmap_json), self.identifier, False
+        )
         self.assertEqual(result, doi)
 
     def test_docmap_is_none(self):
@@ -659,10 +661,7 @@ class TestAddVersionDoi(unittest.TestCase):
         with open(self.log_file, "r") as open_file:
             self.assertEqual(
                 open_file.read(),
-                (
-                    "WARNING elifecleaner:prc:add_doi: "
-                    "%s article-meta tag not found\n"
-                )
+                ("WARNING elifecleaner:prc:add_doi: " "%s article-meta tag not found\n")
                 % self.identifier,
             )
 

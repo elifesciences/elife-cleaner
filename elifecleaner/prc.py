@@ -1,4 +1,3 @@
-import re
 import time
 from xml.etree.ElementTree import Element, SubElement
 from docmaptools import parse as docmap_parse
