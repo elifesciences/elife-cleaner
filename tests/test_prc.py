@@ -288,7 +288,25 @@ class TestElocationIdFromDocmap(unittest.TestCase):
         expected = "RP85111"
         # invoke
         elocation_id = prc.elocation_id_from_docmap(
-            json.dumps(docmap_json), self.identifier
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        # assert
+        self.assertEqual(elocation_id, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+        self.assertEqual(
+            log_messages[0],
+            ("INFO elifecleaner:prc:elocation_id_from_docmap: " "Parse docmap json\n"),
+        )
+
+    def test_find_by_version_doi(self):
+        "get elocation-id from docmap data by matching version DOI value"
+        docmap_json = docmap_test_data()
+        version_doi = "10.7554/eLife.85111.1"
+        expected = "RP85111"
+        # invoke
+        elocation_id = prc.elocation_id_from_docmap(
+            json.dumps(docmap_json), version_doi=version_doi, identifier=self.identifier
         )
         # assert
         self.assertEqual(elocation_id, expected)
@@ -305,7 +323,7 @@ class TestElocationIdFromDocmap(unittest.TestCase):
         expected = None
         # invoke
         elocation_id = prc.elocation_id_from_docmap(
-            json.dumps(docmap_json), self.identifier
+            json.dumps(docmap_json), identifier=self.identifier
         )
         with open(self.log_file, "r") as open_file:
             log_messages = open_file.readlines()
@@ -317,7 +335,7 @@ class TestElocationIdFromDocmap(unittest.TestCase):
                 log_messages[-1],
                 (
                     "WARNING elifecleaner:prc:elocation_id_from_docmap: "
-                    "%s no electronicArticleIdentifier found in the docmap\n"
+                    "%s no elocation_id found in the docmap\n"
                 )
                 % self.identifier,
             )
@@ -327,7 +345,7 @@ class TestElocationIdFromDocmap(unittest.TestCase):
         docmap_json = {}
         # invoke
         elocation_id = prc.elocation_id_from_docmap(
-            json.dumps(docmap_json), self.identifier
+            json.dumps(docmap_json), identifier=self.identifier
         )
         # assert
         self.assertEqual(elocation_id, None)
@@ -716,6 +734,81 @@ class TestReviewDateFromDocmap(unittest.TestCase):
             )
 
 
+class TestLicenseFromDocmap(unittest.TestCase):
+    "tests for license_from_docmap()"
+
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+        self.identifier = "test.zip"
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_license_from_docmap(self):
+        "parse license from docmap preprint output"
+        docmap_json = docmap_test_data()
+        expected = "http://creativecommons.org/licenses/by/4.0/"
+        # invoke
+        result = prc.license_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        # assert
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+        self.assertEqual(
+            log_messages[0],
+            ("INFO elifecleaner:prc:license_from_docmap: " "Parse docmap json\n"),
+        )
+
+    def test_no_license(self):
+        "test if no license data can be found in the docmap"
+        docmap_json = docmap_test_data()
+        del docmap_json["steps"]["_:b1"]["actions"][0]["outputs"][0]["license"]
+        expected = None
+        # invoke
+        result = prc.license_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+        # assert
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:license_from_docmap: "
+                    "%s no license found in the docmap\n"
+                )
+                % self.identifier,
+            )
+
+    def test_docmap_is_none(self):
+        "test if docmap is empty"
+        docmap_json = {}
+        # invoke
+        result = prc.license_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        # assert
+        self.assertEqual(result, None)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:license_from_docmap: "
+                    "%s parsing docmap returned None\n"
+                )
+                % self.identifier,
+            )
+
+
 class TestVolumeFromDocmap(unittest.TestCase):
     "tests for prc.volume_from_docmap()"
 
@@ -730,11 +823,13 @@ class TestVolumeFromDocmap(unittest.TestCase):
         delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
 
     def test_volume_from_docmap(self):
-        "calculate volume from docmap data"
+        "parse volume from docmap data"
         docmap_json = docmap_test_data()
         expected = 12
         # invoke
-        volume = prc.volume_from_docmap(json.dumps(docmap_json), self.identifier)
+        volume = prc.volume_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
         # assert
         self.assertEqual(volume, expected)
         with open(self.log_file, "r") as open_file:
@@ -744,12 +839,41 @@ class TestVolumeFromDocmap(unittest.TestCase):
             ("INFO elifecleaner:prc:volume_from_docmap: " "Parse docmap json\n"),
         )
 
+    def test_volume_non_int(self):
+        "test if the volume value cannot be parsed to int"
+        docmap_json = docmap_test_data()
+        docmap_json["steps"]["_:b1"]["actions"][0]["outputs"][0]["partOf"][
+            "volumeIdentifier"
+        ] = "foo"
+        expected = None
+        # invoke
+        volume = prc.volume_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        # assert
+        self.assertEqual(volume, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+        self.assertEqual(
+            log_messages[0],
+            ("INFO elifecleaner:prc:volume_from_docmap: " "Parse docmap json\n"),
+        )
+        self.assertEqual(
+            log_messages[-1],
+            (
+                "WARNING elifecleaner:prc:volume_from_docmap: "
+                "test.zip volume from the docmap could not be cast as int\n"
+            ),
+        )
+
     def test_no_history_data(self):
         "test if no history data can be found in the docmap"
         docmap_json = {"first-step": "_:b0", "steps": {"_:b0": {}}}
         expected = None
         # invoke
-        volume = prc.volume_from_docmap(json.dumps(docmap_json), self.identifier)
+        volume = prc.volume_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
         with open(self.log_file, "r") as open_file:
             log_messages = open_file.readlines()
         # assert
@@ -760,7 +884,7 @@ class TestVolumeFromDocmap(unittest.TestCase):
                 log_messages[-1],
                 (
                     "WARNING elifecleaner:prc:volume_from_docmap: "
-                    "%s no volumeIdentifier found in the docmap\n"
+                    "%s no volume found in the docmap\n"
                 )
                 % self.identifier,
             )
@@ -769,7 +893,9 @@ class TestVolumeFromDocmap(unittest.TestCase):
         "test if docmap is empty"
         docmap_json = {}
         # invoke
-        volume = prc.volume_from_docmap(json.dumps(docmap_json), self.identifier)
+        volume = prc.volume_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
         # assert
         self.assertEqual(volume, None)
         with open(self.log_file, "r") as open_file:
@@ -778,6 +904,84 @@ class TestVolumeFromDocmap(unittest.TestCase):
                 log_messages[-1],
                 (
                     "WARNING elifecleaner:prc:volume_from_docmap: "
+                    "%s parsing docmap returned None\n"
+                )
+                % self.identifier,
+            )
+
+
+class TestArticleCategoriesFromDocmap(unittest.TestCase):
+    "tests for article_categories_from_docmap()"
+
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+        self.identifier = "test.zip"
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_article_categories(self):
+        "parse article categories from docmap preprint output"
+        docmap_json = docmap_test_data()
+        expected = ["Neuroscience"]
+        # invoke
+        result = prc.article_categories_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        # assert
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+        self.assertEqual(
+            log_messages[0],
+            (
+                "INFO elifecleaner:prc:article_categories_from_docmap: "
+                "Parse docmap json\n"
+            ),
+        )
+
+    def test_no_article_categories(self):
+        "test if no article categories data can be found in the docmap"
+        docmap_json = docmap_test_data()
+        del docmap_json["steps"]["_:b1"]["actions"][0]["outputs"][0]["partOf"]
+        expected = None
+        # invoke
+        result = prc.article_categories_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+        # assert
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:article_categories_from_docmap: "
+                    "%s no article_categories found in the docmap\n"
+                )
+                % self.identifier,
+            )
+
+    def test_docmap_is_none(self):
+        "test if docmap is empty"
+        docmap_json = {}
+        # invoke
+        result = prc.article_categories_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        # assert
+        self.assertEqual(result, None)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:article_categories_from_docmap: "
                     "%s parsing docmap returned None\n"
                 )
                 % self.identifier,
