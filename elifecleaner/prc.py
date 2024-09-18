@@ -136,7 +136,7 @@ def add_prc_custom_meta_tags(root, identifier=None):
     return root
 
 
-def elocation_id_from_docmap(docmap_string, identifier=None):
+def elocation_id_from_docmap(docmap_string, version_doi=None, identifier=None):
     "from the docmap get the elocation-id volume"
     LOGGER.info("Parse docmap json")
     d_json = docmap_parse.docmap_json(docmap_string)
@@ -146,22 +146,15 @@ def elocation_id_from_docmap(docmap_string, identifier=None):
             identifier,
         )
         return None
-    preprint_data = docmap_parse.docmap_latest_preprint(d_json)
-    elocation_id = None
-    if (
-        preprint_data
-        and preprint_data.get("partOf")
-        and preprint_data.get("partOf").get("electronicArticleIdentifier")
-    ):
-        elocation_id = preprint_data.get("partOf").get("electronicArticleIdentifier")
-
+    elocation_id = docmap_parse.preprint_electronic_article_identifier(
+        d_json, version_doi=version_doi, identifier=identifier
+    )
     if not elocation_id:
         LOGGER.warning(
-            "%s no electronicArticleIdentifier found in the docmap",
+            "%s no elocation_id found in the docmap",
             identifier,
         )
         return None
-
     return elocation_id
 
 
@@ -287,8 +280,8 @@ def review_date_from_docmap(docmap_string, identifier=None):
     return date_string
 
 
-def volume_from_docmap(docmap_string, identifier=None):
-    "from the docmap calculate the volume"
+def volume_from_docmap(docmap_string, version_doi=None, identifier=None):
+    "from the docmap get the volume"
     LOGGER.info("Parse docmap json")
     d_json = docmap_parse.docmap_json(docmap_string)
     if not d_json:
@@ -297,23 +290,69 @@ def volume_from_docmap(docmap_string, identifier=None):
             identifier,
         )
         return None
-    preprint_data = docmap_parse.docmap_latest_preprint(d_json)
-    volume = None
-    if (
-        preprint_data
-        and preprint_data.get("partOf")
-        and preprint_data.get("partOf").get("volumeIdentifier")
-    ):
-        volume = int(preprint_data.get("partOf").get("volumeIdentifier"))
-
-    if not volume:
+    volume = docmap_parse.preprint_volume(
+        d_json, version_doi=version_doi, identifier=identifier
+    )
+    if volume:
+        try:
+            volume = int(volume)
+        except ValueError:
+            LOGGER.warning(
+                "%s volume from the docmap could not be cast as int",
+                identifier,
+            )
+            return None
+    else:
         LOGGER.warning(
-            "%s no volumeIdentifier found in the docmap",
+            "%s no volume found in the docmap",
             identifier,
         )
         return None
-
     return volume
+
+
+def license_from_docmap(docmap_string, version_doi=None, identifier=None):
+    "from the docmap get the license"
+    LOGGER.info("Parse docmap json")
+    d_json = docmap_parse.docmap_json(docmap_string)
+    if not d_json:
+        LOGGER.warning(
+            "%s parsing docmap returned None",
+            identifier,
+        )
+        return None
+    license_url = docmap_parse.preprint_license(
+        d_json, version_doi=version_doi, identifier=identifier
+    )
+    if not license_url:
+        LOGGER.warning(
+            "%s no license found in the docmap",
+            identifier,
+        )
+        return None
+    return license_url
+
+
+def article_categories_from_docmap(docmap_string, version_doi=None, identifier=None):
+    "from the docmap get the article category subject disciplines"
+    LOGGER.info("Parse docmap json")
+    d_json = docmap_parse.docmap_json(docmap_string)
+    if not d_json:
+        LOGGER.warning(
+            "%s parsing docmap returned None",
+            identifier,
+        )
+        return None
+    article_categories = docmap_parse.preprint_subject_disciplines(
+        d_json, version_doi=version_doi, identifier=identifier
+    )
+    if not article_categories:
+        LOGGER.warning(
+            "%s no article_categories found in the docmap",
+            identifier,
+        )
+        return None
+    return article_categories
 
 
 def date_struct_from_string(date_string):
