@@ -1077,7 +1077,7 @@ class TestAddHistoryDate(unittest.TestCase):
         # expected history XML string for when using the input values
         self.history_xml_output = (
             "<history>"
-            '<date date-type="sent-for-review">'
+            '<date date-type="sent-for-review" iso-8601-date="2022-11-28">'
             "<day>28</day>"
             "<month>11</month>"
             "<year>2022</year>"
