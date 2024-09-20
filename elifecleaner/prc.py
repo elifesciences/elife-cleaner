@@ -394,6 +394,7 @@ def add_history_date(root, date_type, date_struct, identifier=None):
     date_tag = SubElement(history_tag, "date")
     if date_type:
         date_tag.set("date-type", date_type)
+        date_tag.set("iso-8601-date", time.strftime("%Y-%m-%d", date_struct))
     jats_build.set_dmy(date_tag, date_struct)
     return root
 
