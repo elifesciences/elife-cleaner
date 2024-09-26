@@ -75,7 +75,7 @@ def add_sub_article_xml(
     return root
 
 
-def sub_article_data(docmap_string, article, version_doi=None, generate_dois=True):
+def sub_article_data(docmap_string, article=None, version_doi=None, generate_dois=True):
     "parse docmap, get the HTML for each article, and format the content"
     LOGGER.info("Parsing docmap json")
     d_json = docmap_parse.docmap_json(docmap_string)
@@ -143,22 +143,32 @@ def sub_article_contributors(article_object, sub_article_object, participants=No
             sub_article_object.contributors.append(author)
 
 
-def build_sub_article_object(article_object, xml_root, content, index):
-    # generate a DOI value and create an article object
-    if article_object.version_doi:
-        doi_base = article_object.version_doi
-    else:
-        doi_base = article_object.doi
-    sub_article_object = Article(sub_article_doi(doi_base, index))
+def build_sub_article_object(
+    article_object, xml_root, content, index, generate_dois=True
+):
+    # generate or set a DOI value
+    doi = None
+    if generate_dois and article_object:
+        if article_object.version_doi:
+            doi_base = article_object.version_doi
+        else:
+            doi_base = article_object.doi
+        doi = sub_article_doi(doi_base, index)
+    elif not generate_dois:
+        doi = content.get("doi")
+    # create an article object
+    sub_article_object = Article(doi)
     # set the article id
     sub_article_object.id = sub_article_id(index)
     # set the article type
     sub_article_object.article_type = ARTICLE_TYPE_MAP.get(
         content.get("type"), content.get("type")
     )
-    sub_article_contributors(
-        article_object, sub_article_object, content.get("participants")
-    )
+    # copy contributors from the article_object
+    if article_object:
+        sub_article_contributors(
+            article_object, sub_article_object, content.get("participants")
+        )
     # take the article title from the XML
     article_title_tag = xml_root.find(".//front-stub/title-group/article-title")
     if article_title_tag is not None:
@@ -234,7 +244,7 @@ def transform_ordered_lists(content_json):
     return content_json
 
 
-def format_content_json(content_json, article_object, generate_dois=True):
+def format_content_json(content_json, article_object=None, generate_dois=True):
     data = []
     # parse html to xml
     content_json = docmap_parse.transform_docmap_content(content_json)
@@ -252,12 +262,8 @@ def format_content_json(content_json, article_object, generate_dois=True):
         xml_root = utils.remove_tags(xml_root, "hr")
 
         sub_article_object = build_sub_article_object(
-            article_object, xml_root, content, index
+            article_object, xml_root, content, index, generate_dois
         )
-
-        if not generate_dois:
-            # reset the DOI to the one from the docmap content
-            sub_article_object.doi = content.get("doi")
 
         data.append(
             {
