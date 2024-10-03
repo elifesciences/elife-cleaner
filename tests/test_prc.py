@@ -734,6 +734,81 @@ class TestReviewDateFromDocmap(unittest.TestCase):
             )
 
 
+class TestArticleIdFromDocmap(unittest.TestCase):
+    "tests for article_id_from_docmap()"
+
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+        self.identifier = "test.zip"
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
+    def test_article_id_from_docmap(self):
+        "parse article_id from docmap preprint output"
+        docmap_json = docmap_test_data()
+        expected = "85111"
+        # invoke
+        result = prc.article_id_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        # assert
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+        self.assertEqual(
+            log_messages[0],
+            ("INFO elifecleaner:prc:article_id_from_docmap: " "Parse docmap json\n"),
+        )
+
+    def test_no_article_id(self):
+        "test if no article_id data can be found in the docmap"
+        docmap_json = docmap_test_data()
+        del docmap_json["steps"]["_:b1"]["actions"][0]["outputs"][0]["identifier"]
+        expected = None
+        # invoke
+        result = prc.article_id_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+        # assert
+        self.assertEqual(result, expected)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:article_id_from_docmap: "
+                    "%s no article_id found in the docmap\n"
+                )
+                % self.identifier,
+            )
+
+    def test_docmap_is_none(self):
+        "test if docmap is empty"
+        docmap_json = {}
+        # invoke
+        result = prc.article_id_from_docmap(
+            json.dumps(docmap_json), identifier=self.identifier
+        )
+        # assert
+        self.assertEqual(result, None)
+        with open(self.log_file, "r") as open_file:
+            log_messages = open_file.readlines()
+            self.assertEqual(
+                log_messages[-1],
+                (
+                    "WARNING elifecleaner:prc:article_id_from_docmap: "
+                    "%s parsing docmap returned None\n"
+                )
+                % self.identifier,
+            )
+
+
 class TestLicenseFromDocmap(unittest.TestCase):
     "tests for license_from_docmap()"
 
