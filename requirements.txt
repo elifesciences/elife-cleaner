@@ -1,4 +1,4 @@
-docmaptools==0.24.0
+docmaptools==0.25.0
 elifetools==0.32.0
 elifearticle==0.14.0
 jatsgenerator==0.7.0
