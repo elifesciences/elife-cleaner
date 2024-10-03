@@ -311,6 +311,28 @@ def volume_from_docmap(docmap_string, version_doi=None, identifier=None):
     return volume
 
 
+def article_id_from_docmap(docmap_string, version_doi=None, identifier=None):
+    "from the docmap get the article_id"
+    LOGGER.info("Parse docmap json")
+    d_json = docmap_parse.docmap_json(docmap_string)
+    if not d_json:
+        LOGGER.warning(
+            "%s parsing docmap returned None",
+            identifier,
+        )
+        return None
+    article_id = docmap_parse.preprint_identifier(
+        d_json, version_doi=version_doi, identifier=identifier
+    )
+    if not article_id:
+        LOGGER.warning(
+            "%s no article_id found in the docmap",
+            identifier,
+        )
+        return None
+    return article_id
+
+
 def license_from_docmap(docmap_string, version_doi=None, identifier=None):
     "from the docmap get the license"
     LOGGER.info("Parse docmap json")
