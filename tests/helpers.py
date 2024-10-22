@@ -61,3 +61,22 @@ def sub_article_xml_fixture(
         b'article-type="%s" id="%s">%s%s</sub-article>'
         % (article_type, sub_article_id, front_stub_xml_string, body_xml_string)
     )
+
+
+class FakeRequest:
+    def __init__(self):
+        self.headers = {}
+        self.body = None
+
+
+class FakeResponse:
+    def __init__(self, status_code, response_json=None, text="", content=None):
+        self.status_code = status_code
+        self.response_json = response_json
+        self.content = content
+        self.text = text
+        self.request = FakeRequest()
+        self.headers = {}
+
+    def json(self):
+        return self.response_json
