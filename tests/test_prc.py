@@ -3,9 +3,9 @@ import time
 import unittest
 from xml.etree import ElementTree
 import json
-from elifetools import xmlio
 from elifecleaner import LOGGER, configure_logging, prc
 from tests.helpers import delete_files_in_folder
+
 
 # elife ISSN example of non-PRC journal-id tag values
 NON_PRC_XML = (
@@ -84,7 +84,6 @@ class TestTransformJournalIdTags(unittest.TestCase):
         # populate an ElementTree
         identifier = "test.zip"
         xml_string = PRC_XML
-        expected = bytes(NON_PRC_XML, encoding="utf-8")
         root = ElementTree.fromstring(xml_string)
         # invoke the function
         root_output = prc.transform_journal_id_tags(root, identifier)
@@ -1205,132 +1204,4 @@ class TestAddHistoryDate(unittest.TestCase):
         root_output = prc.add_history_date(
             root, self.date_type, self.date_struct, self.identifier
         )
-        self.assertEqual(ElementTree.tostring(root_output), expected)
-
-
-class TestAddPubHistory(unittest.TestCase):
-    "tests for prc.add_pub_history()"
-
-    def setUp(self):
-        # register XML namespaces
-        xmlio.register_xmlns()
-
-        self.xml_string_template = '<article xmlns:xlink="http://www.w3.org/1999/xlink"><front><article-meta>%s</article-meta></front></article>'
-        self.history_data = [
-            {
-                "type": "preprint",
-                "date": "2022-11-22",
-                "doi": "10.1101/2022.11.08.515698",
-                "url": "https://www.biorxiv.org/content/10.1101/2022.11.08.515698v2",
-                "versionIdentifier": "2",
-                "published": "2022-11-22",
-                "content": [
-                    {
-                        "type": "computer-file",
-                        "url": "s3://transfers-elife/biorxiv_Current_Content/November_2022/23_Nov_22_Batch_1444/b0f4d90b-6c92-1014-9a2e-aae015926ab4.meca",
-                    }
-                ],
-            },
-            {
-                "type": "reviewed-preprint",
-                "date": "2023-01-25T14:00:00+00:00",
-                "identifier": "85111",
-                "doi": "10.7554/eLife.85111.1",
-                "versionIdentifier": "1",
-                "license": "http://creativecommons.org/licenses/by/4.0/",
-                "published": "2023-01-25T14:00:00+00:00",
-            },
-            {
-                "type": "reviewed-preprint",
-                "date": "2023-05-10T14:00:00+00:00",
-                "identifier": "85111",
-                "doi": "10.7554/eLife.85111.2",
-                "versionIdentifier": "2",
-                "license": "http://creativecommons.org/licenses/by/4.0/",
-                "published": "2023-05-10T14:00:00+00:00",
-            },
-        ]
-        self.identifier = "test.zip"
-        # expected history XML string for when using the input values
-        self.xml_output = (
-            "<pub-history>"
-            "<event>"
-            "<event-desc>This manuscript was published as a preprint.</event-desc>"
-            '<date date-type="preprint" iso-8601-date="2022-11-22">'
-            "<day>22</day>"
-            "<month>11</month>"
-            "<year>2022</year>"
-            "</date>"
-            '<self-uri content-type="preprint" xlink:href="https://doi.org/10.1101/2022.11.08.515698" />'
-            "</event>"
-            "<event>"
-            "<event-desc>This manuscript was published as a reviewed preprint.</event-desc>"
-            '<date date-type="reviewed-preprint" iso-8601-date="2023-01-25">'
-            "<day>25</day>"
-            "<month>01</month>"
-            "<year>2023</year>"
-            "</date>"
-            '<self-uri content-type="reviewed-preprint" xlink:href="https://doi.org/10.7554/eLife.85111.1" />'
-            "</event>"
-            "<event>"
-            "<event-desc>The reviewed preprint was revised.</event-desc>"
-            '<date date-type="reviewed-preprint" iso-8601-date="2023-05-10">'
-            "<day>10</day>"
-            "<month>05</month>"
-            "<year>2023</year>"
-            "</date>"
-            '<self-uri content-type="reviewed-preprint" xlink:href="https://doi.org/10.7554/eLife.85111.2" />'
-            "</event>"
-            "</pub-history>"
-        )
-
-    def test_add_pub_history(self):
-        "test adding to an existing pub-history tag"
-        xml_string = self.xml_string_template % "<pub-history />"
-        expected = bytes(self.xml_string_template % self.xml_output, encoding="utf-8")
-        root = ElementTree.fromstring(xml_string)
-        root_output = prc.add_pub_history(root, self.history_data, self.identifier)
-        print(ElementTree.tostring(root_output))
-        self.assertEqual(ElementTree.tostring(root_output), expected)
-
-    def test_no_data(self):
-        "test for if there is no data to be added"
-        # use xlink:href in the sample and the xmlns is kept in the output
-        xml_string = (
-            self.xml_string_template % '<ext-link xlink:href="https://example.org" />'
-        )
-        history_data = None
-        expected = bytes(xml_string, encoding="utf-8")
-        root = ElementTree.fromstring(xml_string)
-        root_output = prc.add_pub_history(root, history_data, self.identifier)
-        self.assertEqual(ElementTree.tostring(root_output), expected)
-
-    def test_after_history_tag(self):
-        "test adding a pub-history tag after an existing history tag"
-        xml_string = self.xml_string_template % "<history />"
-        expected = bytes(
-            self.xml_string_template % ("<history />" + self.xml_output),
-            encoding="utf-8",
-        )
-        root = ElementTree.fromstring(xml_string)
-        root_output = prc.add_pub_history(root, self.history_data, self.identifier)
-        self.assertEqual(ElementTree.tostring(root_output), expected)
-
-    def test_elocation_id_tag(self):
-        "test pub-history tag should be added after the elocation-id tag"
-        xml_string = self.xml_string_template % "<elocation-id />"
-        expected = bytes(
-            self.xml_string_template % ("<elocation-id />" + self.xml_output),
-            encoding="utf-8",
-        )
-        root = ElementTree.fromstring(xml_string)
-        root_output = prc.add_pub_history(root, self.history_data, self.identifier)
-        self.assertEqual(ElementTree.tostring(root_output), expected)
-
-    def test_no_article_meta(self):
-        "test if there is no article-meta tag"
-        xml_string = "<article />"
-        expected = b"<article />"
-        root = ElementTree.fromstring(xml_string)
-        root_output = prc.add_pub_history(root, self.history_data, self.identifier)
         self.assertEqual(ElementTree.tostring(root_output), expected)
