@@ -14,7 +14,12 @@ from elifearticle.article import (
 )
 from elifetools import xmlio
 from elifecleaner import configure_logging, LOGGER, parse, sub_article
-from tests.helpers import delete_files_in_folder, read_fixture, read_log_file_lines
+from tests.helpers import (
+    delete_files_in_folder,
+    FakeResponse,
+    read_fixture,
+    read_log_file_lines,
+)
 
 
 ARTICLE_TITLES = [
@@ -90,25 +95,6 @@ CONTENT_JSON = [
         ],
     },
 ]
-
-
-class FakeRequest:
-    def __init__(self):
-        self.headers = {}
-        self.body = None
-
-
-class FakeResponse:
-    def __init__(self, status_code, response_json=None, text="", content=None):
-        self.status_code = status_code
-        self.response_json = response_json
-        self.content = content
-        self.text = text
-        self.request = FakeRequest()
-        self.headers = {}
-
-    def json(self):
-        return self.response_json
 
 
 def editor_report_article_fixture(
