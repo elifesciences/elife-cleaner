@@ -37,6 +37,26 @@ def mock_get_web_content(
     return b"<p><strong>%s</strong></p>\n" b"<p>The ....</p>\n" % b"Title"
 
 
+class TestPruneHistoryData(unittest.TestCase):
+    "tests for prune_history_data()"
+
+    def test_prune_history_data(self):
+        "test removing history data of newer DOI versions"
+        history_data = [
+            {"doi": "preprint", "versionIdentifier": 2},
+            {"doi": "10.7554/eLife.99854.1", "versionIdentifier": 1},
+            {"doi": "10.7554/eLife.99854.2", "versionIdentifier": 2},
+            {"doi": "10.7554/eLife.99854.3", "versionIdentifier": 3},
+        ]
+        doi = "10.7554/eLife.99854"
+        version = 3
+        expected = history_data[0:3]
+        # invoke
+        result = pub_history.prune_history_data(history_data, doi, version)
+        # assert
+        self.assertEqual(result, expected)
+
+
 class TestFindPubHistoryTag(unittest.TestCase):
     "tests for find_pub_history_tag()"
 
