@@ -7,6 +7,20 @@ from elifecleaner import sub_article, LOGGER
 from elifecleaner.prc import date_struct_from_string
 
 
+def prune_history_data(history_data, doi, version):
+    "return history data related to doi for versions less than version provided"
+    return [
+        data
+        for data in history_data
+        if not data.get("doi").startswith(doi)
+        or (
+            data.get("doi").startswith(doi)
+            and data.get("versionIdentifier")
+            and int(data.get("versionIdentifier")) < int(version)
+        )
+    ]
+
+
 def find_pub_history_tag(root, identifier=None):
     "find pub-history tag in the article-meta tag"
     article_meta_tag = root.find(".//front/article-meta")

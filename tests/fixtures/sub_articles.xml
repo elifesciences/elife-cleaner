@@ -13,7 +13,7 @@
             <given-names>Given</given-names>
             <suffix>X</suffix>
           </name>
-          <contrib-id authenticated="true" contrib-id-type="orcid">http://orcid.org/https://orcid.org/0000-0000-0000-0000</contrib-id>
+          <contrib-id authenticated="true" contrib-id-type="orcid">http://orcid.org/0000-0000-0000-0000</contrib-id>
           <aff>
             <institution-wrap>
               <institution-id institution-id="ror">ror</institution-id>
