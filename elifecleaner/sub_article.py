@@ -392,22 +392,28 @@ def pretty_sub_article_xml(root):
             "article-id",
             "article-title",
             "body",
+            "caption",
             "collab",
             "contrib",
             "contrib-group",
+            "disp-formula",
             "disp-quote",
+            "fig",
             "front-stub",
             "given-names",
             "kwd",
             "kwd-group",
+            "label",
             "name",
             "role",
             "surname",
+            "table-wrap",
+            "title",
             "title-group",
         ]:
             for tag in sub_article_tag.findall(".//%s" % tag_name):
                 tag_new_line_wrap(tag)
         # wrap tail only for the following tags
-        for tag_name in ["anonymous", "etal", "p"]:
+        for tag_name in ["anonymous", "etal", "graphic", "p"]:
             for tag in sub_article_tag.findall(".//%s" % tag_name):
                 tag_new_line_wrap_tail(tag)
