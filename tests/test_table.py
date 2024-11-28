@@ -40,6 +40,28 @@ def table_sub_article_xml_fixture():
     )
 
 
+class TestTableInlineGraphicHrefs(unittest.TestCase):
+    "tests for table.table_inline_graphic_hrefs()"
+
+    def test_table_inline_graphic_hrefs(self):
+        "get a list of xlink:href values from inline-graphic tags to be converted to table-wrap"
+        xml_string = (
+            b'<sub-article id="sa1" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            b"<body>"
+            b"<p><bold>Review table 1.</bold></p>"
+            b'<p><inline-graphic xlink:href="elife-70493-inf1.png"/></p>'
+            b"<p>Next paragraph is not an inline-graphic href.</p>"
+            b'<p><inline-graphic xlink:href="elife-70493-inf2.png"/></p>'
+            b"</body>"
+            b"</sub-article>"
+        )
+        identifier = "test.zip"
+        tag = ElementTree.fromstring(xml_string)
+        expected = ["elife-70493-inf1.png"]
+        result = table.table_inline_graphic_hrefs(tag, identifier)
+        self.assertEqual(result, expected)
+
+
 class TestTransformTable(unittest.TestCase):
     "tests for table.transform_table()"
 
@@ -77,7 +99,7 @@ class TestTransformTable(unittest.TestCase):
                 "<title>Table title.</title>"
                 "<p>This is the caption for this table that describes what it contains.</p>"
                 "</caption>"
-                '<graphic mimetype="image" mime-subtype="png" xlink:href="elife-70493-inf1.png" />'
+                '<graphic mimetype="image" mime-subtype="png" xlink:href="elife-70493-sa1-table1.png" />'
                 "</table-wrap>"
                 "<p>Another paragraph with an inline graphic "
                 '<inline-graphic xlink:href="elife-70493-inf2.jpg" />'
