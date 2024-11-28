@@ -10,16 +10,6 @@ from tests.helpers import (
 )
 
 
-class TestInfFileIdentifier(unittest.TestCase):
-    "tests for fig.inf_file_identifier()"
-
-    def test_inf_file_identifer(self):
-        "identifier portion of an inline-graphic file name"
-        inf_file_name = "elife-70493-inf1.png"
-        expected = "inf1"
-        self.assertEqual(fig.inf_file_identifier(inf_file_name), expected)
-
-
 class TestFigFileNameIdentifer(unittest.TestCase):
     "tests for fig.fig_file_name_identifier()"
 

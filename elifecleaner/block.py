@@ -130,6 +130,19 @@ def tag_index_groups(body_tag, sub_article_id, block_type, identifier):
     return fig_index_groups
 
 
+def graphic_href_list(body_tag, index_groups):
+    "collect a list of xlink:href values of graphic tags from the index_groups"
+    href_list = []
+    for group in index_groups:
+        if group.get("inline_graphic_index"):
+            inline_graphic_p = body_tag[group.get("inline_graphic_index")]
+            inline_graphic_tag = inline_graphic_tag_from_tag(inline_graphic_p)
+            image_href = utils.xlink_href(inline_graphic_tag)
+            if image_href:
+                href_list.append(image_href)
+    return href_list
+
+
 def title_paragraph_content(string_list):
     "from list of strings repair inline formatting tags and split into title and paragraph"
     # check for nested inline formatting tags

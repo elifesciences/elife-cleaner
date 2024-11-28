@@ -13,6 +13,11 @@ def file_extension(file_name):
     return file_name.rsplit(".", 1)[-1]
 
 
+def inf_file_identifier(inf_file_name):
+    "specific part of an inline graphic file name, e.g. inf1 in elife-70493-inf1.png"
+    return inf_file_name.rsplit(".", 1)[0].rsplit("-", 1)[-1]
+
+
 # match ascii characters from decimal 0 to 31, as hexidecimal character entitiy strings
 # e.g. &#x001D; or &#x01;
 CONTROL_CHARACTER_ENTITY_MATCH_PATTERN = r"&#x0{0,2}[0-1][0-9A-Fa-f];"
