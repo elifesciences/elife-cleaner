@@ -2,11 +2,6 @@ from xml.etree.ElementTree import Element
 from elifecleaner import block, utils
 
 
-def inf_file_identifier(inf_file_name):
-    "specific part of an inline graphic file name, e.g. inf1 in elife-70493-inf1.png"
-    return inf_file_name.rsplit(".", 1)[0].rsplit("-", 1)[-1]
-
-
 def fig_file_name_identifier(sub_article_id, fig_index):
     "create the unique portion of a fig file name"
     return "%s-fig%s" % (sub_article_id, fig_index)
@@ -20,7 +15,8 @@ def fig_id(sub_article_id, fig_index):
 def fig_file_name(inf_file_name, sub_article_id, fig_index):
     "from inf file name create a new fig file name"
     return inf_file_name.replace(
-        inf_file_identifier(inf_file_name), "%s-fig%s" % (sub_article_id, fig_index)
+        utils.inf_file_identifier(inf_file_name),
+        "%s-fig%s" % (sub_article_id, fig_index),
     )
 
 
@@ -45,13 +41,7 @@ def inline_graphic_hrefs(sub_article_root, identifier):
     if body_tag is not None:
         # match paragraphs with fig data in them and record the tag indexes
         fig_index_groups = fig_tag_index_groups(body_tag, sub_article_id, identifier)
-        for group in fig_index_groups:
-            if group.get("inline_graphic_index"):
-                inline_graphic_p = body_tag[group.get("inline_graphic_index")]
-                inline_graphic_tag = block.inline_graphic_tag_from_tag(inline_graphic_p)
-                image_href = utils.xlink_href(inline_graphic_tag)
-                if image_href:
-                    href_list.append(image_href)
+        href_list = block.graphic_href_list(body_tag, fig_index_groups)
     return href_list
 
 

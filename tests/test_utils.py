@@ -19,6 +19,16 @@ class TestFileExtension(unittest.TestCase):
             )
 
 
+class TestInfFileIdentifier(unittest.TestCase):
+    "tests for utils.inf_file_identifier()"
+
+    def test_inf_file_identifer(self):
+        "identifier portion of an inline-graphic file name"
+        inf_file_name = "elife-70493-inf1.png"
+        expected = "inf1"
+        self.assertEqual(utils.inf_file_identifier(inf_file_name), expected)
+
+
 class TestMatchControlCharacterEntities(unittest.TestCase):
     def test_match_control_character_entities(self):
         self.assertEqual([], utils.match_control_character_entities(""))

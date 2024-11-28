@@ -10,9 +10,30 @@ def table_wrap_id(sub_article_id, table_index):
     return "%stable%s" % (sub_article_id, table_index)
 
 
+def table_file_name(inf_file_name, sub_article_id, table_index):
+    "from inf file name create a new table file name"
+    return inf_file_name.replace(
+        utils.inf_file_identifier(inf_file_name),
+        "%s-table%s" % (sub_article_id, table_index),
+    )
+
+
 def table_tag_index_groups(body_tag, sub_article_id, identifier):
     "iterate through the tags in body_tag and find groups of tags to be converted to a table-wrap"
     return block.tag_index_groups(body_tag, sub_article_id, "table", identifier)
+
+
+def table_inline_graphic_hrefs(sub_article_root, identifier):
+    "get inline-graphic href values"
+    sub_article_id, body_tag = block.sub_article_tag_parts(sub_article_root)
+    href_list = []
+    if body_tag is not None:
+        # match paragraphs with table data in them and record the tag indexes
+        table_index_groups = table_tag_index_groups(
+            body_tag, sub_article_id, identifier
+        )
+        href_list = block.graphic_href_list(body_tag, table_index_groups)
+    return href_list
 
 
 def transform_table_group(body_tag, table_index, table_group, sub_article_id):
@@ -30,8 +51,10 @@ def transform_table_group(body_tag, table_index, table_group, sub_article_id):
             inline_graphic_p_tag, body_tag, table_group.get("caption_index")
         )
 
+    # rename the image file
+    new_file_name = table_file_name(image_href, sub_article_id, table_index)
+
     # graphic tag
-    new_file_name = image_href
     block.set_graphic_tag(inline_graphic_p_tag, image_href, new_file_name)
 
     # convert inline-graphic p tag to a table-wrap tag
