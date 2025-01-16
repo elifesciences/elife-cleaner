@@ -134,7 +134,7 @@ def graphic_href_list(body_tag, index_groups):
     "collect a list of xlink:href values of graphic tags from the index_groups"
     href_list = []
     for group in index_groups:
-        if group.get("inline_graphic_index"):
+        if group.get("inline_graphic_index") is not None:
             inline_graphic_p = body_tag[group.get("inline_graphic_index")]
             inline_graphic_tag = inline_graphic_tag_from_tag(inline_graphic_p)
             image_href = utils.xlink_href(inline_graphic_tag)
