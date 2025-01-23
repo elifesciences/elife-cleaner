@@ -29,10 +29,10 @@ def disp_formula_tag_index_groups(body_tag, identifier):
     "find p tags which have inline-graphic tags to convert to disp-formula"
     index_groups = []
     tag_id_index = 0
-    for tag_index, parent_tag in enumerate(body_tag.iterfind(".//p")):
+    for tag_index, parent_tag in enumerate(body_tag.iterfind("*")):
         # count the inline-graphic tags to get an id value
-        if parent_tag.findall("inline-graphic") or parent_tag.findall(
-            "disp-formula/graphic"
+        if parent_tag.findall("inline-graphic") or (
+            parent_tag.tag == "disp-formula" and parent_tag.findall("graphic")
         ):
             tag_id_index += 1
         if block.is_p_inline_graphic(
@@ -129,23 +129,19 @@ def inline_formula_tag_index_groups(body_tag, identifier):
     "find p tags which have inline-graphic tags to convert to inline-formula"
     index_groups = []
     tag_id_index = 0
-    for tag_index, parent_tag in enumerate(body_tag.iterfind(".//p")):
+    for tag_index, parent_tag in enumerate(body_tag.iterfind("*")):
         # count the inline-graphic tags to get an id value
-        if parent_tag.findall("inline-graphic") or parent_tag.findall(
-            "disp-formula/graphic"
+        if parent_tag.findall("inline-graphic") or (
+            parent_tag.tag == "disp-formula" and parent_tag.findall("graphic")
         ):
             tag_id_index += 1
 
-        if (
-            parent_tag.tag == "p"
-            and parent_tag.find("inline-graphic") is not None
-            and not (
-                block.is_p_inline_graphic(
-                    tag=parent_tag,
-                    sub_article_id=None,
-                    p_tag_index=None,
-                    identifier=identifier,
-                )
+        if parent_tag.find("inline-graphic") is not None and not (
+            block.is_p_inline_graphic(
+                tag=parent_tag,
+                sub_article_id=None,
+                p_tag_index=None,
+                identifier=identifier,
             )
         ):
             detail = {
