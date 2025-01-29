@@ -234,6 +234,40 @@ class TestEquationInlineGraphicHrefs(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
+class TestFormulaGraphicHrefs(unittest.TestCase):
+    "tests for equation.formula_graphic_hrefs()"
+
+    def test_formula_graphic_hrefs(self):
+        "get a list of xlink:href values from disp-formula graphic tags"
+        xml_string = (
+            b'<sub-article id="sa1" xmlns:xlink="http://www.w3.org/1999/xlink"><body>'
+            b"<p>Following is a display formula:</p>\n"
+            b'<disp-formula id="sa1equ1">\n'
+            b'<graphic mimetype="image" mime-subtype="jpg"'
+            b' xlink:href="elife-sa1-equ1.jpg"/>\n'
+            b"</disp-formula>\n"
+            b"</body></sub-article>"
+        )
+        identifier = "test.zip"
+        tag = ElementTree.fromstring(xml_string)
+        expected = ["elife-sa1-equ1.jpg"]
+        result = equation.formula_graphic_hrefs(tag, identifier)
+        self.assertEqual(result, expected)
+
+    def test_graphic_hrefs_no_match(self):
+        "empty list of xlink:href values when there is no graphic tag"
+        xml_string = (
+            b'<sub-article id="sa1" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            b"<body><p/></body>"
+            b"</sub-article>"
+        )
+        identifier = "test.zip"
+        tag = ElementTree.fromstring(xml_string)
+        expected = []
+        result = equation.formula_graphic_hrefs(tag, identifier)
+        self.assertEqual(result, expected)
+
+
 class TestInlineEquationInlineGraphicHrefs(unittest.TestCase):
     "tests for inline_equation_inline_graphic_hrefs()"
 
