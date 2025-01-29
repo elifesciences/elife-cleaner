@@ -103,6 +103,18 @@ def equation_inline_graphic_hrefs(sub_article_root, identifier):
     return href_list
 
 
+def formula_graphic_hrefs(sub_article_root, identifier):
+    "get disp-formula graphic href values"
+    sub_article_id, body_tag = block.sub_article_tag_parts(sub_article_root)
+    href_list = []
+    if body_tag is not None:
+        for graphic_tag in body_tag.findall(".//disp-formula/graphic"):
+            image_href = utils.xlink_href(graphic_tag)
+            if image_href:
+                href_list.append(image_href)
+    return href_list
+
+
 def inline_equation_inline_graphic_hrefs(sub_article_root, identifier):
     "get inline-graphic xlink:href values to be inline-formula"
     body_tag = block.sub_article_tag_parts(sub_article_root)[1]

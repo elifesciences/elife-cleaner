@@ -62,6 +62,44 @@ class TestTableInlineGraphicHrefs(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
+class TestTableGraphicHrefs(unittest.TestCase):
+    "tests for table.table_graphic_hrefs()"
+
+    def test_table_graphic_hrefs(self):
+        "get a list of xlink:href values from table-wrap graphic tags"
+        xml_string = (
+            b'<sub-article id="sa1" xmlns:xlink="http://www.w3.org/1999/xlink"><body>'
+            b'<table-wrap id="sa1table1">\n'
+            b"<label>Review table 1.</label>\n"
+            b"<caption>\n"
+            b"<title>Caption title.</title>\n"
+            b"<p>Caption paragraph.</p>\n"
+            b"</caption>\n"
+            b'<graphic mimetype="image" mime-subtype="jpg"'
+            b' xlink:href="elife-95901-sa1-table1.jpg"/>\n'
+            b"</table-wrap>\n"
+            b"</body></sub-article>"
+        )
+        identifier = "test.zip"
+        tag = ElementTree.fromstring(xml_string)
+        expected = ["elife-95901-sa1-table1.jpg"]
+        result = table.table_graphic_hrefs(tag, identifier)
+        self.assertEqual(result, expected)
+
+    def test_graphic_hrefs_no_match(self):
+        "empty list of xlink:href values when there is no graphic tag"
+        xml_string = (
+            b'<sub-article id="sa1" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            b"<body><p/></body>"
+            b"</sub-article>"
+        )
+        identifier = "test.zip"
+        tag = ElementTree.fromstring(xml_string)
+        expected = []
+        result = table.table_graphic_hrefs(tag, identifier)
+        self.assertEqual(result, expected)
+
+
 class TestTransformTable(unittest.TestCase):
     "tests for table.transform_table()"
 
