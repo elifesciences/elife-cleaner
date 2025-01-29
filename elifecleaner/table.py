@@ -36,6 +36,18 @@ def table_inline_graphic_hrefs(sub_article_root, identifier):
     return href_list
 
 
+def table_graphic_hrefs(sub_article_root, identifier):
+    "get table-wrap graphic href values"
+    sub_article_id, body_tag = block.sub_article_tag_parts(sub_article_root)
+    href_list = []
+    if body_tag is not None:
+        for graphic_tag in body_tag.findall(".//table-wrap/graphic"):
+            image_href = utils.xlink_href(graphic_tag)
+            if image_href:
+                href_list.append(image_href)
+    return href_list
+
+
 def transform_table_group(body_tag, table_index, table_group, sub_article_id):
     "transform one set of p tags into table-wrap tags as specified in the table_group dict"
     inline_graphic_p_tag = body_tag[table_group.get("inline_graphic_index")]
