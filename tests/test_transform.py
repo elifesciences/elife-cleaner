@@ -852,6 +852,35 @@ class TestTransformXmlFunding(unittest.TestCase):
             in transform.xml_element_to_string(root_output)
         )
 
+    def test_edge_case(self):
+        "test edge case to not match Wellcome funding statement"
+
+        # populate an ElementTree
+        xml_string_start = self.xml_string_start.replace(
+            (
+                '<funding-source id="http://dx.doi.org/10.13039/100010269">'
+                "Wellcome Trust (WT)"
+                "</funding-source>"
+            ),
+            (
+                '<funding-source id="http://dx.doi.org/10.13039/100000861">'
+                "Burroughs Wellcome Fund"
+                "</funding-source>"
+            ),
+        )
+        xml_string = "%s%s" % (
+            xml_string_start,
+            self.xml_string_end,
+        )
+        root = ElementTree.fromstring(xml_string)
+        # invoke the function
+        root_output = transform.transform_xml_funding(root, "test.zip")
+        # confirm XML root returned is modified
+        self.assertTrue(
+            "<funding-statement>%s</funding-statement>" % WELLCOME_FUNDING_STATEMENT
+            not in transform.xml_element_to_string(root_output)
+        )
+
 
 class TestTransformAssetFileNameMap(unittest.TestCase):
     def test_transform_asset_file_name_map_empty(self):
