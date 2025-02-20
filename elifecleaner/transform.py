@@ -383,7 +383,12 @@ def transform_xml_funding(root, zip_file_name):
     )
     # look for Wellcome term
     wellcome = bool(
-        [funding for funding in funding_sources if "wellcome" in funding.lower()]
+        [
+            funding
+            for funding in funding_sources
+            if "wellcome" in funding.lower()
+            and "burroughs wellcome fund" not in funding.lower()
+        ]
     )
 
     add_funding_statement = False
