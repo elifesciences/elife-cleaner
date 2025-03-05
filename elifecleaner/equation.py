@@ -28,13 +28,9 @@ def transform_equations(sub_article_root, identifier):
 def disp_formula_tag_index_groups(body_tag, identifier):
     "find p tags which have inline-graphic tags to convert to disp-formula"
     index_groups = []
-    tag_id_index = 0
+    tag_id_index = 1
     for tag_index, parent_tag in enumerate(body_tag.iterfind("*")):
         # count the inline-graphic tags to get an id value
-        if parent_tag.findall("inline-graphic") or (
-            parent_tag.tag == "disp-formula" and parent_tag.findall("graphic")
-        ):
-            tag_id_index += 1
         if block.is_p_inline_graphic(
             tag=parent_tag,
             sub_article_id=None,
@@ -48,6 +44,12 @@ def disp_formula_tag_index_groups(body_tag, identifier):
                 "tag_index": tag_id_index,
             }
             index_groups.append(detail)
+            tag_id_index += 1
+        elif parent_tag.findall("inline-graphic") or (
+            parent_tag.tag == "disp-formula" and parent_tag.findall("graphic")
+        ):
+            # count the inline-graphic tags to get an id value
+            tag_id_index += len(parent_tag.findall("inline-graphic"))
     return index_groups
 
 
@@ -140,14 +142,8 @@ def transform_inline_equations(sub_article_root, identifier):
 def inline_formula_tag_index_groups(body_tag, identifier):
     "find p tags which have inline-graphic tags to convert to inline-formula"
     index_groups = []
-    tag_id_index = 0
+    tag_id_index = 1
     for tag_index, parent_tag in enumerate(body_tag.iterfind("*")):
-        # count the inline-graphic tags to get an id value
-        if parent_tag.findall("inline-graphic") or (
-            parent_tag.tag == "disp-formula" and parent_tag.findall("graphic")
-        ):
-            tag_id_index += 1
-
         if parent_tag.find("inline-graphic") is not None and not (
             block.is_p_inline_graphic(
                 tag=parent_tag,
@@ -156,21 +152,28 @@ def inline_formula_tag_index_groups(body_tag, identifier):
                 identifier=identifier,
             )
         ):
-            detail = {
-                "label_index": None,
-                "caption_index": None,
-                "inline_graphic_index": tag_index,
-                "tag_index": tag_id_index,
-            }
+            for inline_graphic_tag in parent_tag.findall("inline-graphic"):
+                detail = {
+                    "label_index": None,
+                    "caption_index": None,
+                    "inline_graphic_index": tag_index,
+                    "tag_index": tag_id_index,
+                }
 
-            index_groups.append(detail)
+                index_groups.append(detail)
+                tag_id_index += 1
+        elif parent_tag.findall("inline-graphic") or (
+            parent_tag.tag == "disp-formula" and parent_tag.findall("graphic")
+        ):
+            # count the inline-graphic tags to get an id value
+            tag_id_index += len(parent_tag.findall("inline-graphic"))
 
     return index_groups
 
 
 def transform_inline_formulas(body_tag, index_groups, sub_article_id):
-    "transform p tags in the body_tag to table-wrap tags as listed in table_index_groups"
-    for group in reversed(index_groups):
+    "transform inline-graphic tags to inline-formula tags as listed in index_groups"
+    for group in index_groups:
         index = group.get("tag_index")
         transform_inline_formula(body_tag, index, group, sub_article_id)
 

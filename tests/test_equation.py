@@ -39,6 +39,29 @@ class TestInlineFormulaGraphicHrefs(unittest.TestCase):
         result = equation.inline_formula_graphic_hrefs(tag, identifier)
         self.assertEqual(result, expected)
 
+    def test_multiple(self):
+        "test collecting multiple inline-formula inline-graphic data"
+        xml_string = (
+            '<sub-article xmlns:xlink="http://www.w3.org/1999/xlink" id="sa1">'
+            "<body>"
+            "<p>An inline equation"
+            ' <inline-formula id="sa1equ1">'
+            '<inline-graphic xlink:href="elife-sa1-equ1.jpg" />'
+            "</inline-formula>"
+            " and another inline equation"
+            ' <inline-formula id="sa1equ2">'
+            '<inline-graphic xlink:href="elife-sa1-equ2.jpg" />'
+            "</inline-formula>"
+            ".</p>"
+            "</body>"
+            "</sub-article>"
+        )
+        identifier = "test.zip"
+        tag = ElementTree.fromstring(xml_string)
+        expected = ["elife-sa1-equ1.jpg", "elife-sa1-equ2.jpg"]
+        result = equation.inline_formula_graphic_hrefs(tag, identifier)
+        self.assertEqual(result, expected)
+
 
 class TestTransformEquations(unittest.TestCase):
     "tests for transform_equations()"
@@ -95,6 +118,31 @@ class TestDispFormulaTagIndexGroups(unittest.TestCase):
                 "caption_index": None,
                 "inline_graphic_index": 2,
                 "tag_index": 2,
+            }
+        ]
+        # invoke
+        result = equation.disp_formula_tag_index_groups(body_tag, identifier)
+        # assert
+        self.assertEqual(result, expected)
+
+    def test_multiple(self):
+        "test a sample with multiple inline-formula and disp-formula"
+        body_tag = ElementTree.fromstring(
+            '<body xmlns:xlink="http://www.w3.org/1999/xlink">'
+            "<p>An inline equation"
+            ' <inline-graphic xlink:href="elife-inf1.jpg"/>'
+            ' and another inline equation <inline-graphic xlink:href="elife-inf2.jpg"/>.</p>'
+            "<p>Following is a display formula:</p>"
+            '<p><inline-graphic xlink:href="elife-inf2.jpg"/></p>'
+            "</body>"
+        )
+        identifier = "10.7554/eLife.95901.1"
+        expected = [
+            {
+                "label_index": None,
+                "caption_index": None,
+                "inline_graphic_index": 2,
+                "tag_index": 3,
             }
         ]
         # invoke
@@ -326,6 +374,39 @@ class TestTransformInlineEquations(unittest.TestCase):
         # assert
         self.assertEqual(ElementTree.tostring(result).decode("utf8"), expected)
 
+    def test_transform_multiple(self):
+        "test converting multiple inline-graphic tags to inline-formula"
+        xmlio.register_xmlns()
+        sub_article_root = ElementTree.fromstring(
+            '<sub-article id="sa1" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            "<body>"
+            "<p>An inline equation"
+            ' <inline-graphic xlink:href="elife-inf1.jpg"/>'
+            ' and another inline equation <inline-graphic xlink:href="elife-inf2.jpg"/>.</p>'
+            "</body>"
+            "</sub-article>"
+        )
+        identifier = "10.7554/eLife.95901.1"
+        expected = (
+            '<sub-article xmlns:xlink="http://www.w3.org/1999/xlink" id="sa1">'
+            "<body>"
+            "<p>An inline equation"
+            ' <inline-formula id="sa1equ1">'
+            '<inline-graphic xlink:href="elife-sa1-equ1.jpg" />'
+            "</inline-formula>"
+            " and another inline equation"
+            ' <inline-formula id="sa1equ2">'
+            '<inline-graphic xlink:href="elife-sa1-equ2.jpg" />'
+            "</inline-formula>"
+            ".</p>"
+            "</body>"
+            "</sub-article>"
+        )
+        # invoke
+        result = equation.transform_inline_equations(sub_article_root, identifier)
+        # assert
+        self.assertEqual(ElementTree.tostring(result).decode("utf8"), expected)
+
 
 class TestInlineFormulaTagIndexGroups(unittest.TestCase):
     "tests for inline_formula_tag_index_groups()"
@@ -348,6 +429,35 @@ class TestInlineFormulaTagIndexGroups(unittest.TestCase):
                 "inline_graphic_index": 0,
                 "tag_index": 1,
             }
+        ]
+        # invoke
+        result = equation.inline_formula_tag_index_groups(body_tag, identifier)
+        # assert
+        self.assertEqual(result, expected)
+
+    def test_multiple(self):
+        "test multiple inline-graphic tags in a p tag to be converted to inline-formula"
+        body_tag = ElementTree.fromstring(
+            '<body xmlns:xlink="http://www.w3.org/1999/xlink">'
+            "<p>An inline equation"
+            ' <inline-graphic xlink:href="elife-inf1.jpg"/>'
+            ' and another inline equation <inline-graphic xlink:href="elife-inf2.jpg"/>.</p>'
+            "</body>"
+        )
+        identifier = "10.7554/eLife.95901.1"
+        expected = [
+            {
+                "label_index": None,
+                "caption_index": None,
+                "inline_graphic_index": 0,
+                "tag_index": 1,
+            },
+            {
+                "label_index": None,
+                "caption_index": None,
+                "inline_graphic_index": 0,
+                "tag_index": 2,
+            },
         ]
         # invoke
         result = equation.inline_formula_tag_index_groups(body_tag, identifier)
@@ -388,6 +498,45 @@ class TestTransformInlineFormulas(unittest.TestCase):
             '<p>Second inline formula: <inline-formula id="sa1equ2">'
             '<inline-graphic xlink:href="elife-sa1-equ2.jpg" />'
             "</inline-formula></p>"
+            "</body>"
+        )
+        # invoke
+        equation.transform_inline_formulas(body_tag, index_groups, sub_article_id)
+        # assert
+        self.assertEqual(ElementTree.tostring(body_tag).decode("utf8"), expected)
+
+    def test_multiple(self):
+        "convert multiple inline-graphic tags in a p tag to inline-formula"
+        xmlio.register_xmlns()
+        body_tag = ElementTree.fromstring(
+            '<body xmlns:xlink="http://www.w3.org/1999/xlink">'
+            "<p>An inline equation"
+            ' <inline-graphic xlink:href="elife-inf1.jpg"/>'
+            ' and another inline equation <inline-graphic xlink:href="elife-inf2.jpg"/>.</p>'
+            "</body>"
+        )
+        index_groups = [
+            {
+                "inline_graphic_index": 0,
+                "tag_index": 1,
+            },
+            {
+                "inline_graphic_index": 0,
+                "tag_index": 2,
+            },
+        ]
+        sub_article_id = "sa1"
+        expected = (
+            '<body xmlns:xlink="http://www.w3.org/1999/xlink">'
+            "<p>An inline equation"
+            ' <inline-formula id="sa1equ1">'
+            '<inline-graphic xlink:href="elife-sa1-equ1.jpg" />'
+            "</inline-formula>"
+            " and another inline equation"
+            ' <inline-formula id="sa1equ2">'
+            '<inline-graphic xlink:href="elife-sa1-equ2.jpg" />'
+            "</inline-formula>"
+            ".</p>"
             "</body>"
         )
         # invoke
