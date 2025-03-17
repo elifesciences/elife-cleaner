@@ -1416,6 +1416,46 @@ class TestSetArticleCategories(unittest.TestCase):
         xml_string = ElementTree.tostring(xml_root).decode("utf-8")
         self.assertEqual(xml_string, expected)
 
+    def test_alternatives_tag(self):
+        "test if there is also an article-version-alternatives tag"
+        xml_root = ElementTree.fromstring(
+            "<article>"
+            "<front>"
+            "<article-meta>"
+            "<article-id />"
+            "<article-version-alternatives/>"
+            "<title-group />"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        display_channel = "Research Article"
+        article_categories = ["Structural Biology and Molecular Biophysics"]
+        expected = (
+            "<article>"
+            "<front>"
+            "<article-meta>"
+            "<article-id />"
+            "<article-version-alternatives />"
+            "<article-categories>"
+            '<subj-group subj-group-type="display-channel">'
+            "<subject>Research Article</subject>"
+            "</subj-group>"
+            '<subj-group subj-group-type="heading">'
+            "<subject>Structural Biology and Molecular Biophysics</subject>"
+            "</subj-group>"
+            "</article-categories>"
+            "<title-group />"
+            "</article-meta>"
+            "</front>"
+            "</article>"
+        )
+        # invoke
+        prc.set_article_categories(xml_root, display_channel, article_categories)
+        # assert
+        xml_string = ElementTree.tostring(xml_root).decode("utf-8")
+        self.assertEqual(xml_string, expected)
+
 
 # cc-by license data
 LICENSE_DATA_DICT_CC_BY = {
