@@ -488,6 +488,7 @@ def set_article_categories(xml_root, display_channel=None, article_categories=No
             if tag.tag == "article-id":
                 insert_index = tag_index + 1
             if tag.tag == "title-group":
+                insert_index = tag_index
                 break
         article_categories_tag = Element("article-categories")
         article_meta_tag.insert(insert_index, article_categories_tag)
