@@ -97,6 +97,91 @@ class TestTransformEquations(unittest.TestCase):
         # assert
         self.assertEqual(ElementTree.tostring(result).decode("utf8"), expected)
 
+    def test_hybrid(self):
+        "test when inline-formula and inline-graphic tags are included"
+        xmlio.register_xmlns()
+        sub_article_root = ElementTree.fromstring(
+            '<sub-article id="sa1" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            "<body>"
+            "<p>First paragraph with an inline equation"
+            ' <inline-graphic xlink:href="elife-inf1.jpg"/>.</p>'
+            "<p>Inline equation"
+            ' <inline-formula id="sa1equ1"><inline-graphic xlink:href="elife-95901-sa1-equ1.jpg"'
+            ' mimetype="image" mime-subtype="jpeg"/>'
+            "</inline-formula>.</p>"
+            "<p>Following is a display formula:</p>"
+            '<p><inline-graphic xlink:href="elife-inf2.jpg"/></p>'
+            "</body>"
+            "</sub-article>"
+        )
+        identifier = "10.7554/eLife.95901.1"
+        expected = (
+            '<sub-article xmlns:xlink="http://www.w3.org/1999/xlink" id="sa1">'
+            "<body>"
+            "<p>First paragraph with an inline equation"
+            ' <inline-graphic xlink:href="elife-inf1.jpg" />.</p>'
+            "<p>Inline equation"
+            ' <inline-formula id="sa1equ1"><inline-graphic xlink:href="elife-95901-sa1-equ1.jpg"'
+            ' mimetype="image" mime-subtype="jpeg" /></inline-formula>.</p>'
+            "<p>Following is a display formula:</p>"
+            '<disp-formula id="sa1equ3">'
+            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ3.jpg" />'
+            "</disp-formula>"
+            "</body>"
+            "</sub-article>"
+        )
+        # invoke
+        result = equation.transform_equations(sub_article_root, identifier)
+        # assert
+        self.assertEqual(ElementTree.tostring(result).decode("utf8"), expected)
+
+
+class TestExtraEquationCount(unittest.TestCase):
+    "test for extra_equation_count()"
+
+    def test_inline_graphic(self):
+        parent_tag = ElementTree.fromstring(
+            '<p xmlns:xlink="http://www.w3.org/1999/xlink">An inline equation'
+            ' <inline-graphic xlink:href="elife-inf1.jpg"/>'
+            ' and another inline equation <inline-graphic xlink:href="elife-inf2.jpg"/>.</p>'
+        )
+        expected = 2
+        # invoke
+        result = equation.extra_equation_count(parent_tag)
+        # assert
+        self.assertEqual(result, expected)
+
+    def test_inline_formula(self):
+        "test counting equation and potential equation tags"
+        parent_tag = ElementTree.fromstring(
+            '<p xmlns:xlink="http://www.w3.org/1999/xlink">An inline equation'
+            ' <inline-formula id="sa0equ1"><inline-graphic xlink:href="elife-95901-sa0-equ1.jpg"'
+            ' mimetype="image" mime-subtype="jpeg"/>'
+            "</inline-formula>"
+            ' and another inline equation <inline-formula id="sa0equ2">'
+            '<inline-graphic xlink:href="elife-95901-sa0-equ2.jpg" mimetype="image"'
+            ' mime-subtype="jpeg"/'
+            "></inline-formula>.</p>"
+        )
+        expected = 2
+        # invoke
+        result = equation.extra_equation_count(parent_tag)
+        # assert
+        self.assertEqual(result, expected)
+
+    def test_disp_formula(self):
+        "test counting equation and potential equation tags"
+        parent_tag = ElementTree.fromstring(
+            '<disp-formula id="sa1equ1" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ1.jpg" />'
+            "</disp-formula>"
+        )
+        expected = 1
+        # invoke
+        result = equation.extra_equation_count(parent_tag)
+        # assert
+        self.assertEqual(result, expected)
+
 
 class TestDispFormulaTagIndexGroups(unittest.TestCase):
     "tests for disp_formula_tag_index_groups()"
@@ -144,6 +229,36 @@ class TestDispFormulaTagIndexGroups(unittest.TestCase):
                 "inline_graphic_index": 2,
                 "tag_index": 3,
             }
+        ]
+        # invoke
+        result = equation.disp_formula_tag_index_groups(body_tag, identifier)
+        # assert
+        self.assertEqual(result, expected)
+
+    def test_hybrid(self):
+        "test with an inline-formula tag to count"
+        body_tag = ElementTree.fromstring(
+            '<body xmlns:xlink="http://www.w3.org/1999/xlink">'
+            "<p>An inline equation"
+            ' <inline-formula id="sa0equ1"><inline-graphic xlink:href="elife-95901-sa0-equ1.jpg"'
+            ' mimetype="image" mime-subtype="jpeg"/>'
+            "</inline-formula>"
+            ' and another inline equation <inline-formula id="sa0equ2">'
+            '<inline-graphic xlink:href="elife-95901-sa0-equ2.jpg" mimetype="image"'
+            ' mime-subtype="jpeg"/'
+            "></inline-formula>.</p>"
+            "<p>Following is a display formula:</p>"
+            '<p><inline-graphic xlink:href="elife-inf2.jpg"/></p>'
+            "</body>"
+        )
+        identifier = "10.7554/eLife.95901.1"
+        expected = [
+            {
+                "label_index": None,
+                "caption_index": None,
+                "inline_graphic_index": 2,
+                "tag_index": 3,
+            },
         ]
         # invoke
         result = equation.disp_formula_tag_index_groups(body_tag, identifier)
@@ -457,6 +572,36 @@ class TestInlineFormulaTagIndexGroups(unittest.TestCase):
                 "caption_index": None,
                 "inline_graphic_index": 0,
                 "tag_index": 2,
+            },
+        ]
+        # invoke
+        result = equation.inline_formula_tag_index_groups(body_tag, identifier)
+        # assert
+        self.assertEqual(result, expected)
+
+    def test_hybrid(self):
+        "test with a converted disp-formula tag to count"
+        body_tag = ElementTree.fromstring(
+            '<body xmlns:xlink="http://www.w3.org/1999/xlink">'
+            '<disp-formula id="sa0equ1"><graphic /></disp-formula>'
+            "<p>An inline equation"
+            ' <inline-graphic xlink:href="elife-inf1.jpg"/>'
+            ' and another inline equation <inline-graphic xlink:href="elife-inf2.jpg"/>.</p>'
+            "</body>"
+        )
+        identifier = "10.7554/eLife.95901.1"
+        expected = [
+            {
+                "label_index": None,
+                "caption_index": None,
+                "inline_graphic_index": 1,
+                "tag_index": 2,
+            },
+            {
+                "label_index": None,
+                "caption_index": None,
+                "inline_graphic_index": 1,
+                "tag_index": 3,
             },
         ]
         # invoke
