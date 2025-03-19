@@ -25,6 +25,21 @@ def transform_equations(sub_article_root, identifier):
     return sub_article_root
 
 
+def extra_equation_count(parent_tag):
+    "count tags which are or may be converted to an equation"
+    tag_count = 0
+    if parent_tag.findall("inline-graphic"):
+        # count the inline-graphic tags
+        tag_count += len(parent_tag.findall("inline-graphic"))
+    elif parent_tag.findall("inline-formula"):
+        # count the inline-formula tags
+        tag_count += len(parent_tag.findall("inline-formula"))
+    elif parent_tag.tag == "disp-formula" and parent_tag.findall("graphic"):
+        # count the block formula tags
+        tag_count += len(parent_tag.findall("graphic"))
+    return tag_count
+
+
 def disp_formula_tag_index_groups(body_tag, identifier):
     "find p tags which have inline-graphic tags to convert to disp-formula"
     index_groups = []
@@ -45,11 +60,8 @@ def disp_formula_tag_index_groups(body_tag, identifier):
             }
             index_groups.append(detail)
             tag_id_index += 1
-        elif parent_tag.findall("inline-graphic") or (
-            parent_tag.tag == "disp-formula" and parent_tag.findall("graphic")
-        ):
-            # count the inline-graphic tags to get an id value
-            tag_id_index += len(parent_tag.findall("inline-graphic"))
+        tag_id_index += extra_equation_count(parent_tag)
+
     return index_groups
 
 
@@ -162,11 +174,7 @@ def inline_formula_tag_index_groups(body_tag, identifier):
 
                 index_groups.append(detail)
                 tag_id_index += 1
-        elif parent_tag.findall("inline-graphic") or (
-            parent_tag.tag == "disp-formula" and parent_tag.findall("graphic")
-        ):
-            # count the inline-graphic tags to get an id value
-            tag_id_index += len(parent_tag.findall("inline-graphic"))
+        tag_id_index += extra_equation_count(parent_tag)
 
     return index_groups
 
