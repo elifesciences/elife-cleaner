@@ -60,7 +60,8 @@ def disp_formula_tag_index_groups(body_tag, identifier):
             }
             index_groups.append(detail)
             tag_id_index += 1
-        tag_id_index += extra_equation_count(parent_tag)
+        else:
+            tag_id_index += extra_equation_count(parent_tag)
 
     return index_groups
 
@@ -174,7 +175,8 @@ def inline_formula_tag_index_groups(body_tag, identifier):
 
                 index_groups.append(detail)
                 tag_id_index += 1
-        tag_id_index += extra_equation_count(parent_tag)
+        else:
+            tag_id_index += extra_equation_count(parent_tag)
 
     return index_groups
 

@@ -63,6 +63,65 @@ class TestInlineFormulaGraphicHrefs(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
+class TestTransformAll(unittest.TestCase):
+    def test_transform_all(self):
+        "test transforming to both disp-formula and inline-formula on XML"
+        xmlio.register_xmlns()
+        sub_article_root = ElementTree.fromstring(
+            '<sub-article id="sa1" xmlns:xlink="http://www.w3.org/1999/xlink">'
+            "<body>"
+            "<p>First paragraph with an inline equation"
+            ' <inline-formula id="sa1equ1"><inline-graphic xlink:href="elife-95901-sa1-equ1.jpg"'
+            ' mimetype="image" mime-subtype="jpeg"/>'
+            "</inline-formula>.</p>"
+            "<p>Inline equation"
+            ' <inline-graphic xlink:href="elife-inf2.jpg"/>.</p>'
+            "<p>Following is a display formula:</p>"
+            '<p><inline-graphic xlink:href="elife-inf3.jpg"/></p>'
+            '<p><inline-graphic xlink:href="elife-inf4.jpg"/></p>'
+            "<p>An untransformed inline equation"
+            ' <inline-graphic xlink:href="elife-inf5.jpg"/>.</p>'
+            "</body>"
+            "</sub-article>"
+        )
+        identifier = "10.7554/eLife.95901.1"
+        expected = (
+            '<sub-article xmlns:xlink="http://www.w3.org/1999/xlink" id="sa1">'
+            "<body>"
+            "<p>First paragraph with an inline equation"
+            ' <inline-formula id="sa1equ1">'
+            '<inline-graphic xlink:href="elife-95901-sa1-equ1.jpg"'
+            ' mimetype="image" mime-subtype="jpeg" />'
+            "</inline-formula>.</p>"
+            "<p>Inline equation"
+            ' <inline-formula id="sa1equ2">'
+            '<inline-graphic xlink:href="elife-sa1-equ2.jpg" />'
+            "</inline-formula>.</p>"
+            "<p>Following is a display formula:</p>"
+            '<disp-formula id="sa1equ3">'
+            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ3.jpg" />'
+            "</disp-formula>"
+            '<disp-formula id="sa1equ4">'
+            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ4.jpg" />'
+            "</disp-formula>"
+            "<p>An untransformed inline equation"
+            ' <inline-formula id="sa1equ5">'
+            '<inline-graphic xlink:href="elife-sa1-equ5.jpg" />'
+            "</inline-formula>.</p>"
+            "</body>"
+            "</sub-article>"
+        )
+        # invoke each of the functions
+        sub_article_root = equation.transform_equations(sub_article_root, identifier)
+        sub_article_root = equation.transform_inline_equations(
+            sub_article_root, identifier
+        )
+        # assert
+        self.assertEqual(
+            ElementTree.tostring(sub_article_root).decode("utf8"), expected
+        )
+
+
 class TestTransformEquations(unittest.TestCase):
     "tests for transform_equations()"
 
