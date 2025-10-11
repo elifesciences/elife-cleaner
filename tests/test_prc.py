@@ -1646,6 +1646,38 @@ class TestEditorContributors(unittest.TestCase):
             ),
         )
 
+    def test_editor_orcid_and_ror(self):
+        "test populating editor Contributor objects with ORCiD and ROR values"
+        docmap_string = read_fixture("87361.json", mode="r")
+        version_doi = "10.7554/eLife.87361.1"
+        # invoke
+        editors = prc.editor_contributors(docmap_string, version_doi)
+        # assert
+        self.assertEqual(len(editors), 2)
+        self.assertEqual(editors[0].surname, "Rokas")
+        self.assertEqual(editors[0].contrib_type, "editor")
+        self.assertEqual(editors[0].orcid, "https://orcid.org/0000-0002-7248-6551")
+        self.assertEqual(editors[0].orcid_authenticated, True)
+
+        self.assertEqual(
+            str(editors[0].affiliations[0]),
+            (
+                "{'institution': 'Vanderbilt University', 'city': 'Nashville', "
+                "'country': 'United States of America', 'ror': 'https://ror.org/02vm5rt34'}"
+            ),
+        )
+        self.assertEqual(editors[1].surname, "Weigel")
+        self.assertEqual(editors[1].contrib_type, "senior_editor")
+        self.assertEqual(editors[1].orcid, None)
+        self.assertEqual(editors[1].orcid_authenticated, None)
+        self.assertEqual(
+            str(editors[1].affiliations[0]),
+            (
+                "{'institution': 'Max Planck Institute for Biology Tübingen', "
+                "'city': 'Tübingen', 'country': 'Germany'}"
+            ),
+        )
+
 
 class TestSetEditors(unittest.TestCase):
     "tests for set_editors()"

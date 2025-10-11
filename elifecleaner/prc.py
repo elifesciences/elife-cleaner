@@ -572,6 +572,7 @@ def editor_contributors(docmap_string, version_doi):
             roles.append(editor_role)
         if data_item.get("actor"):
             surname = data_item.get("actor").get("surname")
+            actor_id = data_item.get("actor").get("id")
             given_name = " ".join(
                 [
                     name_part
@@ -599,8 +600,16 @@ def editor_contributors(docmap_string, version_doi):
                     if len(location_parts) == 2:
                         aff.city = location_parts[0]
                         aff.country = location_parts[1].lstrip()
+                if affiliation_data_dict.get("id"):
+                    # if a ror id set the aff ror value
+                    if "ror.org" in affiliation_data_dict.get("id"):
+                        aff.ror = affiliation_data_dict.get("id")
 
         editor = Contributor(contrib_type, surname, given_name)
+        # set orcid value if data availabile
+        if actor_id and "orcid.org" in actor_id:
+            editor.orcid = actor_id
+            editor.orcid_authenticated = True
         editor.roles = roles
         if aff:
             editor.set_affiliation(aff)
