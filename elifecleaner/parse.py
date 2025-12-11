@@ -1,11 +1,14 @@
+from io import BytesIO
 import os
 import re
 from collections import OrderedDict
 from xml.etree import ElementTree
+from xml.parsers.expat import ExpatError
 import html
 from wand.image import Image
 from wand.exceptions import PolicyError, WandRuntimeError
 from elifearticle import parse as articleparse
+from elifetools import xmlio
 from elifetools.utils import escape_ampersand
 from elifecleaner import LOGGER, pdf_utils, utils, zip_lib
 
@@ -302,15 +305,21 @@ def parse_article_xml(xml_file):
                 % [ord(char) for char in utils.match_control_characters(xml_string)]
             )
             xml_string = utils.replace_control_characters(xml_string)
+
         try:
-            return ElementTree.fromstring(xml_string)
-        except ElementTree.ParseError:
+            return xmlio.parse(
+                BytesIO(bytes(xml_string, encoding="utf-8")), insert_pis=True
+            )
+        except (ElementTree.ParseError, ExpatError):
             if REPAIR_XML:
                 # fix ampersands
                 xml_string = escape_ampersand(xml_string)
                 # try to repair the xml namespaces
                 xml_string = repair_article_xml(xml_string)
-                return ElementTree.fromstring(xml_string)
+
+                return xmlio.parse(
+                    BytesIO(bytes(xml_string, encoding="utf-8")), insert_pis=True
+                )
             else:
                 LOGGER.exception("ParseError raised because REPAIR_XML flag is False")
                 raise

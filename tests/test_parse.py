@@ -3,6 +3,7 @@ import unittest
 import zipfile
 from collections import OrderedDict
 from xml.etree import ElementTree
+from xml.parsers.expat import ExpatError
 from mock import patch
 import wand
 from elifecleaner import LOGGER, configure_logging, parse, pdf_utils, zip_lib
@@ -69,7 +70,7 @@ class TestCheckEjpZip(unittest.TestCase):
     def test_check_ejp_zip_do_not_repair_xml(self):
         parse.REPAIR_XML = False
         zip_file = "tests/test_data/30-01-2019-RA-eLife-45644.zip"
-        with self.assertRaises(ElementTree.ParseError):
+        with self.assertRaises(ExpatError):
             parse.check_ejp_zip(zip_file, self.temp_dir)
         log_file_lines = read_log_file_lines(self.log_file)
         self.assertTrue(log_file_lines[0].startswith("ERROR"))
@@ -294,10 +295,12 @@ class TestParseArticleXML(unittest.TestCase):
         xml_file_path = os.path.join(self.temp_dir, "test.xml")
         with open(xml_file_path, "w") as open_file:
             open_file.write(
-                "<article><title>To %snd odd entities.</title></article>" % chr(29)
+                "<article><title>To %snd odd entities.</title><?fig-width 50%%?><fig /></article>"
+                % chr(29)
             )
-        expected = b"<article><title>To %snd odd entities.</title></article>" % bytes(
-            CONTROL_CHARACTER_ENTITY_REPLACEMENT, encoding="utf-8"
+        expected = (
+            b"<article><title>To %snd odd entities.</title><?fig-width 50%%?><fig /></article>"
+            % bytes(CONTROL_CHARACTER_ENTITY_REPLACEMENT, encoding="utf-8")
         )
         root = parse.parse_article_xml(xml_file_path)
         self.assertIsNotNone(root)
@@ -317,7 +320,7 @@ class TestParseArticleXML(unittest.TestCase):
         xml_file_path = os.path.join(self.temp_dir, "test.xml")
         with open(xml_file_path, "w") as open_file:
             open_file.write("malformed xml")
-        with self.assertRaises(ElementTree.ParseError):
+        with self.assertRaises(ExpatError):
             parse.parse_article_xml(xml_file_path)
 
 
