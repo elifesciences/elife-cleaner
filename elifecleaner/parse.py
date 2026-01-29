@@ -308,7 +308,9 @@ def parse_article_xml(xml_file):
 
         try:
             return xmlio.parse(
-                BytesIO(bytes(xml_string, encoding="utf-8")), insert_pis=True
+                BytesIO(bytes(xml_string, encoding="utf-8")),
+                insert_pis=True,
+                insert_comments=True,
             )
         except (ElementTree.ParseError, ExpatError):
             if REPAIR_XML:
@@ -318,7 +320,9 @@ def parse_article_xml(xml_file):
                 xml_string = repair_article_xml(xml_string)
 
                 return xmlio.parse(
-                    BytesIO(bytes(xml_string, encoding="utf-8")), insert_pis=True
+                    BytesIO(bytes(xml_string, encoding="utf-8")),
+                    insert_pis=True,
+                    insert_comments=True,
                 )
             else:
                 LOGGER.exception("ParseError raised because REPAIR_XML flag is False")
