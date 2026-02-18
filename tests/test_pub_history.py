@@ -29,6 +29,7 @@ SCIETY_DATA = {
 
 def mock_get_web_content(
     url=None,
+    user_agent=None,
 ):
     "return a content containing the response data based on the URL"
     if url and url in SCIETY_DATA:
