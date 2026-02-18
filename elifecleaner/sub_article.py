@@ -58,7 +58,11 @@ def reorder_content_json(content_json):
 
 
 def add_sub_article_xml(
-    docmap_string, article_xml, version_doi=None, generate_dois=True
+    docmap_string,
+    article_xml,
+    version_doi=None,
+    generate_dois=True,
+    user_agent=None,
 ):
     "parse content from docmap and add sub-article tags to the article XML"
     LOGGER.info("Parsing article XML into root Element")
@@ -66,7 +70,13 @@ def add_sub_article_xml(
     LOGGER.info("Parsing article XML into an Article object")
     article, error_count = parse.article_from_xml(article_xml)
     LOGGER.info("Populate sub article data")
-    data = sub_article_data(docmap_string, article, version_doi, generate_dois)
+    data = sub_article_data(
+        docmap_string,
+        article,
+        version_doi,
+        generate_dois,
+        user_agent,
+    )
     LOGGER.info("Generate sub-article XML")
     sub_article_xml_root = generate(data)
     LOGGER.info("Appending sub-article tags to the XML root")
@@ -75,14 +85,22 @@ def add_sub_article_xml(
     return root
 
 
-def sub_article_data(docmap_string, article=None, version_doi=None, generate_dois=True):
+def sub_article_data(
+    docmap_string,
+    article=None,
+    version_doi=None,
+    generate_dois=True,
+    user_agent=None,
+):
     "parse docmap, get the HTML for each article, and format the content"
     LOGGER.info("Parsing docmap json")
     d_json = docmap_parse.docmap_json(docmap_string)
     LOGGER.info("Collecting content_json")
     content_json = docmap_parse.docmap_content(d_json, version_doi)
     LOGGER.info("Downloading HTML for each web-content URL")
-    content_json = docmap_parse.populate_docmap_content(content_json)
+    content_json = docmap_parse.populate_docmap_content(
+        content_json, user_agent=user_agent
+    )
     LOGGER.info("Formatting content json into article and XML data")
     return format_content_json(content_json, article, generate_dois)
 
