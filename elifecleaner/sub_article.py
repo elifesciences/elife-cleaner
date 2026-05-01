@@ -228,7 +228,22 @@ def copy_list_item_content(from_tag, to_tag, item_prefix):
 def transform_ordered_lists(content_json):
     "list of list-type order convert each list-item to a p tag"
     for index, content in enumerate(content_json):
-        xml_root = ElementTree.fromstring(content.get("xml"))
+        try:
+            xml_root = ElementTree.fromstring(content.get("xml"))
+        except Exception as exception:
+            LOGGER.exception(
+                (
+                    "Exception raised parsing XML in transform_ordered_lists"
+                    " for type %s, DOI %s, xml %s: %s"
+                )
+                % (
+                    content.get("type"),
+                    content.get("doi"),
+                    content.get("xml"),
+                    str(exception),
+                )
+            )
+            continue
         for list_tag_parent in xml_root.findall(".//list[@list-type='order']/.."):
             for tag_index, child_tag in enumerate(list_tag_parent.iterfind("*")):
                 if child_tag.tag == "list" and child_tag.get("list-type") == "order":

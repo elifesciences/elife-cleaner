@@ -538,6 +538,15 @@ class TestCopyListItemContent(unittest.TestCase):
 class TestTransformOrderedLists(unittest.TestCase):
     "tests for sub_article.transform_ordered_lists()"
 
+    def setUp(self):
+        self.temp_dir = "tests/tmp"
+        self.log_file = os.path.join(self.temp_dir, "test.log")
+        self.log_handler = configure_logging(self.log_file)
+
+    def tearDown(self):
+        LOGGER.removeHandler(self.log_handler)
+        delete_files_in_folder(self.temp_dir, filter_out=[".keepme"])
+
     def test_one_list(self):
         "an example where the list-item content is not wrapped in a p tag"
         content_json = [
@@ -605,6 +614,21 @@ class TestTransformOrderedLists(unittest.TestCase):
         expected_xml = b"<root />"
         result = sub_article.transform_ordered_lists(content_json)
         self.assertEqual(result[0].get("xml"), expected_xml)
+
+    def test_malformed_xml(self):
+        "test and excepiton is raised parsing XML"
+        content_json = [{"xml": "<root>"}]
+        result = sub_article.transform_ordered_lists(content_json)
+        log_file_lines = read_log_file_lines(self.log_file)
+        self.assertTrue(
+            (
+                "ERROR elifecleaner:sub_article:transform_ordered_lists:"
+                " Exception raised parsing XML in transform_ordered_lists"
+                " for type None, DOI None, xml <root>:"
+                " no element found: line 1, column 6\n"
+            )
+            in log_file_lines
+        )
 
     def test_blank_string(self):
         "test an empty list"
