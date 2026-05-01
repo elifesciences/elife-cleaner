@@ -142,7 +142,11 @@ def reviewed_preprint_event_desc(style, first_review_event, version):
     return event_description
 
 
-def history_event_self_uri_list(docmap_string, version_doi):
+def history_event_self_uri_list(
+    docmap_string,
+    version_doi,
+    user_agent=None,
+):
     "a list of self-uri tag data for a history event"
     self_uri_list = []
     d_json = docmap_parse.docmap_json(docmap_string)
@@ -153,6 +157,7 @@ def history_event_self_uri_list(docmap_string, version_doi):
             docmap_string,
             version_doi=version_doi,
             generate_dois=generate_dois,
+            user_agent=user_agent,
         )
         for data_item in data:
             self_uri_data = {}
@@ -165,7 +170,11 @@ def history_event_self_uri_list(docmap_string, version_doi):
 
 
 def collect_history_event_data(
-    history_data, style, docmap_string=None, add_self_uri=False
+    history_data,
+    style,
+    docmap_string=None,
+    add_self_uri=False,
+    user_agent=None,
 ):
     "populate a list of history event data"
     history_event_data = []
@@ -189,7 +198,7 @@ def collect_history_event_data(
         # self-uri values
         if add_self_uri and docmap_string:
             event_data["self_uri_list"] = history_event_self_uri_list(
-                docmap_string, version_doi=event_data.get("doi")
+                docmap_string, version_doi=event_data.get("doi"), user_agent=user_agent
             )
         # append the event data to the list
         history_event_data.append(event_data)
@@ -212,7 +221,13 @@ def add_pub_history_tag(root, history_event_data, identifier=None):
     return root
 
 
-def add_pub_history(root, history_data, docmap_string=None, identifier=None):
+def add_pub_history(
+    root,
+    history_data,
+    docmap_string=None,
+    identifier=None,
+    user_agent=None,
+):
     "add the pub-history tag and add event data to it"
     style = "accepted"
     add_self_uri = False
@@ -223,7 +238,13 @@ def add_pub_history(root, history_data, docmap_string=None, identifier=None):
     return add_pub_history_tag(root, history_event_data, identifier)
 
 
-def add_pub_history_meca(root, history_data, docmap_string=None, identifier=None):
+def add_pub_history_meca(
+    root,
+    history_data,
+    docmap_string=None,
+    identifier=None,
+    user_agent=None,
+):
     "add the MECA style pub-history tag and add event data to it"
     style = "meca"
     add_self_uri = True
