@@ -266,6 +266,13 @@ def format_content_json(content_json, article_object=None, generate_dois=True):
     data = []
     # parse html to xml
     content_json = docmap_parse.transform_docmap_content(content_json)
+    # record which have no HTML
+    for content in content_json:
+        if not content.get("html"):
+            LOGGER.info(
+                "No HTML found for type %s, DOI %s in content_json"
+                % (content.get("type"), content.get("doi"))
+            )
     # only keep items which have html
     content_json = [content for content in content_json if content.get("html")]
     # modify the XML
