@@ -394,6 +394,7 @@ class TestCollectHistoryEventData(unittest.TestCase):
     def test_accepted(self):
         "test collecting history data for accepted style"
         history_data = [
+            {"type": "sent-for-review", "date": "2022-11-29T14:20:30+00:00"},
             {
                 "type": "preprint",
                 "date": "2022-11-22",
@@ -417,20 +418,28 @@ class TestCollectHistoryEventData(unittest.TestCase):
         add_self_uri = False
         expected = [
             {
+                "type": "sent-for-review",
+                "date": "2022-11-29T14:20:30+00:00",
+                "doi": None,
+                "versionIdentifier": None,
+                "event_desc": "Sent for review",
+            },
+            {
                 "type": "preprint",
                 "date": "2022-11-22",
                 "doi": "10.1101/2022.11.08.515698",
                 "versionIdentifier": "2",
                 "event_desc": "This manuscript was published as a preprint.",
-            }
+            },
         ]
         # invoke
         result = pub_history.collect_history_event_data(
             history_data, style, docmap_string, add_self_uri
         )
         # assert
-        self.assertEqual(len(result), 1)
+        self.assertEqual(len(result), 2)
         self.assertDictEqual(result[0], expected[0])
+        self.assertDictEqual(result[1], expected[1])
 
     @patch("docmaptools.parse.get_web_content")
     def test_meca(self, fake_get):
@@ -491,6 +500,34 @@ class TestCollectHistoryEventData(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertDictEqual(result[0], expected[0])
         self.assertDictEqual(result[1], expected[1])
+
+    @patch("docmaptools.parse.get_web_content")
+    def test_sent_for_review_date(self, fake_get):
+        "test if a sent-for-review date is in the history_data, not present in the docmap"
+        fake_get.side_effect = mock_get_web_content
+        style = "meca"
+        docmap_string = read_fixture("99854.json", mode="r")
+        add_self_uri = True
+        expected = [
+            {
+                "type": "sent-for-review",
+                "date": "2022-11-29T14:20:30+00:00",
+                "doi": None,
+                "versionIdentifier": None,
+                "event_desc": "Sent for review",
+                "self_uri_list": [],
+            }
+        ]
+        history_data = [
+            {"type": "sent-for-review", "date": "2022-11-29T14:20:30+00:00"}
+        ]
+        # invoke
+        result = pub_history.collect_history_event_data(
+            history_data, style, docmap_string, add_self_uri
+        )
+        # assert
+        self.assertEqual(len(result), 1)
+        self.assertDictEqual(result[0], expected[0])
 
     def test_no_history_data(self):
         "test if no history data supplied"

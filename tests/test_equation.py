@@ -99,10 +99,10 @@ class TestTransformAll(unittest.TestCase):
             "</inline-formula>.</p>"
             "<p>Following is a display formula:</p>"
             '<disp-formula id="sa1equ3">'
-            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ3.jpg" />'
+            '<graphic mimetype="image/jpg" xlink:href="elife-sa1-equ3.jpg" />'
             "</disp-formula>"
             '<disp-formula id="sa1equ4">'
-            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ4.jpg" />'
+            '<graphic mimetype="image/jpg" xlink:href="elife-sa1-equ4.jpg" />'
             "</disp-formula>"
             "<p>An untransformed inline equation"
             ' <inline-formula id="sa1equ5">'
@@ -146,7 +146,7 @@ class TestTransformEquations(unittest.TestCase):
             ' <inline-graphic xlink:href="elife-inf1.jpg" />.</p>'
             "<p>Following is a display formula:</p>"
             '<disp-formula id="sa1equ2">'
-            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ2.jpg" />'
+            '<graphic mimetype="image/jpg" xlink:href="elife-sa1-equ2.jpg" />'
             "</disp-formula>"
             "</body>"
             "</sub-article>"
@@ -166,7 +166,7 @@ class TestTransformEquations(unittest.TestCase):
             ' <inline-graphic xlink:href="elife-inf1.jpg"/>.</p>'
             "<p>Inline equation"
             ' <inline-formula id="sa1equ1"><inline-graphic xlink:href="elife-95901-sa1-equ1.jpg"'
-            ' mimetype="image" mime-subtype="jpeg"/>'
+            ' mimetype="image/jpeg"/>'
             "</inline-formula>.</p>"
             "<p>Following is a display formula:</p>"
             '<p><inline-graphic xlink:href="elife-inf2.jpg"/></p>'
@@ -181,10 +181,10 @@ class TestTransformEquations(unittest.TestCase):
             ' <inline-graphic xlink:href="elife-inf1.jpg" />.</p>'
             "<p>Inline equation"
             ' <inline-formula id="sa1equ1"><inline-graphic xlink:href="elife-95901-sa1-equ1.jpg"'
-            ' mimetype="image" mime-subtype="jpeg" /></inline-formula>.</p>'
+            ' mimetype="image/jpeg" /></inline-formula>.</p>'
             "<p>Following is a display formula:</p>"
             '<disp-formula id="sa1equ3">'
-            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ3.jpg" />'
+            '<graphic mimetype="image/jpg" xlink:href="elife-sa1-equ3.jpg" />'
             "</disp-formula>"
             "</body>"
             "</sub-article>"
@@ -215,11 +215,10 @@ class TestExtraEquationCount(unittest.TestCase):
         parent_tag = ElementTree.fromstring(
             '<p xmlns:xlink="http://www.w3.org/1999/xlink">An inline equation'
             ' <inline-formula id="sa0equ1"><inline-graphic xlink:href="elife-95901-sa0-equ1.jpg"'
-            ' mimetype="image" mime-subtype="jpeg"/>'
+            ' mimetype="image/jpeg"/>'
             "</inline-formula>"
             ' and another inline equation <inline-formula id="sa0equ2">'
-            '<inline-graphic xlink:href="elife-95901-sa0-equ2.jpg" mimetype="image"'
-            ' mime-subtype="jpeg"/'
+            '<inline-graphic xlink:href="elife-95901-sa0-equ2.jpg" mimetype="image/jpeg"/>'
             "></inline-formula>.</p>"
         )
         expected = 2
@@ -354,11 +353,11 @@ class TestTransformDispFormulas(unittest.TestCase):
             '<body xmlns:xlink="http://www.w3.org/1999/xlink">'
             "<p>First display formula:</p>"
             '<disp-formula id="sa1equ1">'
-            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ1.jpg" />'
+            '<graphic mimetype="image/jpg" xlink:href="elife-sa1-equ1.jpg" />'
             "</disp-formula>"
             "<p>Second display formula:</p>"
             '<disp-formula id="sa1equ2">'
-            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ2.jpg" />'
+            '<graphic mimetype="image/jpg" xlink:href="elife-sa1-equ2.jpg" />'
             "</disp-formula>"
             "</body>"
         )
@@ -423,7 +422,7 @@ class TestTransformDispFormula(unittest.TestCase):
             '<p><inline-graphic xlink:href="elife-inf1.jpg" /></p>'
             "<p>Second display formula:</p>"
             '<disp-formula id="sa1equ2">'
-            '<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-sa1-equ2.jpg" />'
+            '<graphic mimetype="image/jpg" xlink:href="elife-sa1-equ2.jpg" />'
             "</disp-formula>"
             "</body>"
         )

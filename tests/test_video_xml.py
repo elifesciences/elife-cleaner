@@ -1,4 +1,5 @@
 import unittest
+import copy
 import os
 import sys
 import time
@@ -105,18 +106,45 @@ class TestBody(unittest.TestCase):
         root = ElementTree.fromstring("<article/>")
         media_tag_xml_string = (
             b'<media xlink:href="elife-64719-video1.avi" id="video1" '
+            b'content-type="glencoe play-in-place height-250 width-310" mimetype="video/avi" />'
+        )
+        if sys.version_info < (3, 8):
+            # pre Python 3.8 tag attributes are automatically alphabetised
+            media_tag_xml_string = (
+                b'<media content-type="glencoe play-in-place height-250 width-310" '
+                b'id="video1" mimetype="video/avi" xlink:href="elife-64719-video1.avi" />'
+            )
+        expected = (
+            b"<article>" b"<body>" + media_tag_xml_string + b"</body>" b"</article>"
+        )
+        video_xml.set_body(root, VIDEO_DATA)
+        xml_string = ElementTree.tostring(root, "utf-8")
+        self.assertEqual(xml_string, expected)
+
+    def test_no_file_extension(self):
+        "edge case if file name has no extension"
+        root = ElementTree.fromstring("<article/>")
+
+        # remove file extension from the file name of test data
+        video_data = copy.deepcopy(VIDEO_DATA)
+        video_data[0]["video_filename"] = video_data[0]["video_filename"].rsplit(
+            ".", -1
+        )[0]
+
+        media_tag_xml_string = (
+            b'<media xlink:href="elife-64719-video1" id="video1" '
             b'content-type="glencoe play-in-place height-250 width-310" mimetype="video" />'
         )
         if sys.version_info < (3, 8):
             # pre Python 3.8 tag attributes are automatically alphabetised
             media_tag_xml_string = (
                 b'<media content-type="glencoe play-in-place height-250 width-310" '
-                b'id="video1" mimetype="video" xlink:href="elife-64719-video1.avi" />'
+                b'id="video1" mimetype="video" xlink:href="elife-64719-video1" />'
             )
         expected = (
             b"<article>" b"<body>" + media_tag_xml_string + b"</body>" b"</article>"
         )
-        video_xml.set_body(root, VIDEO_DATA)
+        video_xml.set_body(root, video_data)
         xml_string = ElementTree.tostring(root, "utf-8")
         self.assertEqual(xml_string, expected)
 

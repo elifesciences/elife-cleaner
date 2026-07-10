@@ -178,8 +178,11 @@ def title_paragraph_content(string_list):
 def set_graphic_tag(parent, image_href, new_file_name):
     "add a graphic tag to the parent"
     graphic_tag = SubElement(parent, "graphic")
-    graphic_tag.set("mimetype", "image")
-    graphic_tag.set("mime-subtype", utils.file_extension(image_href))
+    extension = utils.file_extension(image_href)
+    if extension:
+        graphic_tag.set("mimetype", "image/%s" % extension)
+    else:
+        graphic_tag.set("mimetype", "image")
     graphic_tag.set("{http://www.w3.org/1999/xlink}href", new_file_name)
 
 
