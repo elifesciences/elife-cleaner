@@ -137,7 +137,7 @@ class TestTransformTable(unittest.TestCase):
                 "<title>Table title.</title>"
                 "<p>This is the caption for this table that describes what it contains.</p>"
                 "</caption>"
-                '<graphic mimetype="image" mime-subtype="png" xlink:href="elife-70493-sa1-table1.png" />'
+                '<graphic mimetype="image/png" xlink:href="elife-70493-sa1-table1.png" />'
                 "</table-wrap>"
                 "<p>Another paragraph with an inline graphic "
                 '<inline-graphic xlink:href="elife-70493-inf2.jpg" />'

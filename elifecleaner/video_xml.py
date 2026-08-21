@@ -3,7 +3,7 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
 from elifearticle.article import ArticleDate
-from elifecleaner import parse
+from elifecleaner import parse, utils
 from elifecleaner.utils import NAMESPACE_MAP, pad_msid
 
 JOURNAL_ID_TYPES = ["nlm-ta", "publisher-id"]
@@ -89,7 +89,11 @@ def set_body(parent, video_data):
         media_tag.set("xlink:href", video.get("video_filename"))
         media_tag.set("id", video.get("video_id"))
         media_tag.set("content-type", MEDIA_CONTENT_TYPE)
-        media_tag.set("mimetype", "video")
+        extension = utils.file_extension(video.get("video_filename"))
+        if extension:
+            media_tag.set("mimetype", "video/%s" % extension)
+        else:
+            media_tag.set("mimetype", "video")
 
 
 def output_xml(root, pretty=False, indent=""):

@@ -10,6 +10,8 @@ def file_extension(file_name):
     "parse file extension from file name"
     if not file_name:
         return None
+    if not "." in file_name:
+        return None
     return file_name.rsplit(".", 1)[-1]
 
 
