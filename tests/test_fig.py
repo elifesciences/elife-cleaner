@@ -136,11 +136,11 @@ class TestTransformFigGroups(unittest.TestCase):
             b"This is the caption for this image that describes what it contains."
             b"</title>"
             b"</caption>"
-            b'<graphic mimetype="image" mime-subtype="png" xlink:href="elife-70493-sa1-fig1.png" />'
+            b'<graphic mimetype="image/png" xlink:href="elife-70493-sa1-fig1.png" />'
             b"</fig>"
             b'<fig id="sa1fig2">'
             b"<label>Review image 2</label>"
-            b'<graphic mimetype="image" mime-subtype="jpg" xlink:href="elife-70493-sa1-fig2.jpg" />'
+            b'<graphic mimetype="image/jpg" xlink:href="elife-70493-sa1-fig2.jpg" />'
             b"</fig>"
             b"</body>"
         )
@@ -259,7 +259,7 @@ class TestTransformFigGroup(unittest.TestCase):
             b"This is the caption for this image that describes what it contains."
             b"</title>"
             b"</caption>"
-            b'<graphic mimetype="image" mime-subtype="png" xlink:href="elife-70493-sa1-fig1.png" />'
+            b'<graphic mimetype="image/png" xlink:href="elife-70493-sa1-fig1.png" />'
             b"</fig>"
             b"</body>"
         )
@@ -337,7 +337,6 @@ class TestTransformFig(unittest.TestCase):
             '<inline-graphic xlink:href="elife-70493-inf2.jpg" />'
             in rough_xml_string.decode("utf8")
         )
-        print(rough_xml_string.decode("utf8"))
         self.assertTrue(
             (
                 "<body>"
@@ -349,7 +348,7 @@ class TestTransformFig(unittest.TestCase):
                 "This is the caption for this image that describes what it contains."
                 "</title>"
                 "</caption>"
-                '<graphic mimetype="image" mime-subtype="png" '
+                '<graphic mimetype="image/png" '
                 'xlink:href="elife-70493-sa1-fig1.png" />'
                 "</fig>"
                 "<p>Another paragraph with an inline graphic "
@@ -408,7 +407,7 @@ class TestTransformFig(unittest.TestCase):
                 "This is the caption for this image that describes what it contains."
                 "</title>"
                 "</caption>"
-                '<graphic mimetype="image" mime-subtype="png" '
+                '<graphic mimetype="image/png" '
                 'xlink:href="elife-70493-sa4-fig1.png" />'
                 "</fig>"
                 "<p>Another paragraph with an inline graphic "
@@ -464,7 +463,7 @@ class TestTransformFig(unittest.TestCase):
                 'Caption with an <italic id="foo">italic</italic> tag or <bold>bold</bold> too.'
                 "</title>"
                 "</caption>"
-                '<graphic mimetype="image" mime-subtype="png" '
+                '<graphic mimetype="image/png" '
                 'xlink:href="elife-70493-sa4-fig1.png" />'
                 "</fig>"
                 "<p>Another paragraph with an inline graphic "
@@ -500,7 +499,7 @@ class TestTransformFig(unittest.TestCase):
                 "<p>First paragraph.</p>"
                 '<fig id="sa4fig1">'
                 "<label>Author response image 1.</label>"
-                '<graphic mimetype="image" mime-subtype="png" '
+                '<graphic mimetype="image/png" '
                 'xlink:href="elife-70493-sa4-fig1.png" />'
                 "</fig>"
                 "<p>Another paragraph with an inline graphic "

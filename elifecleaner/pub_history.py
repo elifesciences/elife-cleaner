@@ -90,13 +90,25 @@ def add_history_event_tag(parent, event_data):
             )
 
 
+EVENT_DESC_SENT_FOR_REVIEW = "Sent for review"
 EVENT_DESC_PREPRINT = "This manuscript was published as a preprint."
 EVENT_DESC_REVIEWED_PREPRINT = "This manuscript was published as a reviewed preprint."
 EVENT_DESC_REVISED_PREPRINT = "The reviewed preprint was revised."
 
+MECA_EVENT_DESC_SENT_FOR_REVIEW = "Sent for review"
 MECA_EVENT_DESC_PREPRINT = "Preprint posted"
 MECA_EVENT_DESC_REVIEWED_PREPRINT = "Reviewed preprint"
 MECA_EVENT_DESC_REVISED_PREPRINT = "Reviewed preprint"
+
+
+def sent_for_review_event_desc(style):
+    "generate event event-desc tag text for a sent-for-review history event"
+    event_description = None
+    if style == "accepted":
+        event_description = EVENT_DESC_SENT_FOR_REVIEW
+    elif style == "meca":
+        event_description = MECA_EVENT_DESC_SENT_FOR_REVIEW
+    return event_description
 
 
 def preprint_event_desc(style):
@@ -190,6 +202,8 @@ def collect_history_event_data(
         # event description
         if event_data.get("type") == "preprint":
             event_data["event_desc"] = preprint_event_desc(style)
+        elif event_data.get("type") == "sent-for-review":
+            event_data["event_desc"] = sent_for_review_event_desc(style)
         elif event_data.get("type") == "reviewed-preprint":
             event_data["event_desc"] = reviewed_preprint_event_desc(
                 style, first_review_event, event_data.get("versionIdentifier")

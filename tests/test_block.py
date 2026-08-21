@@ -156,7 +156,23 @@ class TestSetGraphicTag(unittest.TestCase):
         new_file_name = "new_image.png"
         expected = (
             b'<fig xmlns:xlink="http://www.w3.org/1999/xlink">'
-            b'<graphic mimetype="image" mime-subtype="png" xlink:href="new_image.png" />'
+            b'<graphic mimetype="image/png" xlink:href="new_image.png" />'
+            b"</fig>"
+        )
+        block.set_graphic_tag(tag, image_href, new_file_name)
+        self.assertEqual(ElementTree.tostring(tag), expected)
+
+    def test_no_extension(self):
+        "edge case if file has no extension"
+        # register XML namespaces
+        xmlio.register_xmlns()
+        xml_string = '<fig xmlns:xlink="http://www.w3.org/1999/xlink" />'
+        tag = ElementTree.fromstring(xml_string)
+        image_href = "image"
+        new_file_name = "new_image"
+        expected = (
+            b'<fig xmlns:xlink="http://www.w3.org/1999/xlink">'
+            b'<graphic mimetype="image" xlink:href="new_image" />'
             b"</fig>"
         )
         block.set_graphic_tag(tag, image_href, new_file_name)
