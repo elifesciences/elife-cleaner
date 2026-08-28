@@ -107,9 +107,8 @@ def output_xml(root, pretty=False, indent=""):
     return reparsed.toxml(encoding=encoding)
 
 
-def generate_xml(article, journal_data, video_data, pretty=True, indent=""):
-    "from jats_content generate final JATS output"
-
+def build_xml(article, journal_data, video_data):
+    "from jats_content build XML for final JATS output"
     # set the date to today
     article_date = ArticleDate("publication", time.gmtime())
     article_date.publication_format = "electronic"
@@ -127,6 +126,12 @@ def generate_xml(article, journal_data, video_data, pretty=True, indent=""):
     set_front(root, journal_data, article)
     set_body(root, video_data)
 
+    return root
+
+
+def generate_xml(article, journal_data, video_data, pretty=True, indent=""):
+    "from jats_content generate final JATS output"
+    root = build_xml(article, journal_data, video_data)
     return output_xml(root, pretty, indent)
 
 
@@ -147,4 +152,9 @@ def glencoe_xml(xml_file_path, video_data, pretty=True, indent=""):
         "journal_title": journal_title,
         "publisher_name": publisher_name,
     }
-    return generate_xml(article, journal_data, video_data, pretty, indent)
+    root = build_xml(article, journal_data, video_data)
+    # reset mimetype values to video if a subtype is specified
+    for media_tag in root.findall(".//media"):
+        if media_tag.get("mimetype") and media_tag.get("mimetype").startswith("video/"):
+            media_tag.set("mimetype", "video")
+    return output_xml(root, pretty, indent)

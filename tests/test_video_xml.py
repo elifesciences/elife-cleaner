@@ -176,6 +176,7 @@ class TestGenerateXml(unittest.TestCase):
     def setUp(self):
         self.temp_dir = "tests/tmp"
         self.video_xml_64719 = read_fixture("video_xml_64719.xml", "rb")
+        self.glencoe_video_xml_64719 = read_fixture("glencoe_video_xml_64719.xml", "rb")
         if sys.version_info < (3, 8):
             # pre Python 3.8 tag attributes are automatically alphabetised
             self.video_xml_64719 = self.video_xml_64719.replace(
@@ -199,7 +200,7 @@ class TestGenerateXml(unittest.TestCase):
         with zipfile.ZipFile(zip_file, "r") as input_zipfile:
             input_zipfile.extract(xml_file_name, self.temp_dir)
         xml_string = video_xml.glencoe_xml(xml_file_path, VIDEO_DATA)
-        self.assertEqual(xml_string, self.video_xml_64719)
+        self.assertEqual(xml_string, self.glencoe_video_xml_64719)
 
     @patch.object(time, "gmtime")
     def test_generate_xml(self, fake_gmtime):
