@@ -118,6 +118,35 @@ def sub_article_doi(article_doi, index):
 EDITOR_REPORT_CONTRIB_TYPES = ["assoc_ed"]
 
 
+def add_sub_article_contributor(sub_article_object, participant):
+    "add a contributor to a sub-article object"
+    role_text = None
+    specific_use = None
+    if participant.get("role"):
+        if participant.get("role") == "editor":
+            role_text = "Reviewing Editor"
+            specific_use = "editor"
+        elif participant.get("role") == "peer-reviewer":
+            role_text = "Reviewer"
+            specific_use = "referee"
+
+    if role_text and specific_use:
+        actor = participant.get("actor")
+        first_name = " ".join(
+            [
+                name_part
+                for name_part in [
+                    actor.get("firstName"),
+                    actor.get("_middleName"),
+                ]
+                if name_part
+            ]
+        )
+        author = Contributor("author", actor.get("surname"), first_name)
+        author.roles = [Role(role_text, specific_use)]
+        sub_article_object.contributors.append(author)
+
+
 def sub_article_contributors(article_object, sub_article_object, participants=None):
     "add contributors to the sub-article from the parent article depending on the article type"
     if sub_article_object.article_type == "editor-report":
@@ -133,27 +162,17 @@ def sub_article_contributors(article_object, sub_article_object, participants=No
                 sub_article_object.contributors.append(author)
         elif participants:
             for participant in participants:
-                if participant.get("role") == "editor":
-                    actor = participant.get("actor")
-                    first_name = " ".join(
-                        [
-                            name_part
-                            for name_part in [
-                                actor.get("firstName"),
-                                actor.get("_middleName"),
-                            ]
-                            if name_part
-                        ]
-                    )
-                    author = Contributor("author", actor.get("surname"), first_name)
-                    author.roles = [Role("Reviewing Editor", "editor")]
-                    sub_article_object.contributors.append(author)
+                add_sub_article_contributor(sub_article_object, participant)
     if sub_article_object.article_type == "referee-report":
-        # one anonymous author per referee-report
-        anonymous_author = Contributor("author", None, None)
-        anonymous_author.anonymous = True
-        anonymous_author.roles = [Role("Reviewer", "referee")]
-        sub_article_object.contributors.append(anonymous_author)
+        if participants:
+            for participant in participants:
+                add_sub_article_contributor(sub_article_object, participant)
+        else:
+            # one anonymous author per referee-report
+            anonymous_author = Contributor("author", None, None)
+            anonymous_author.anonymous = True
+            anonymous_author.roles = [Role("Reviewer", "referee")]
+            sub_article_object.contributors.append(anonymous_author)
     if sub_article_object.article_type == "author-comment":
         for author in article_object.contributors:
             if not author.roles:
