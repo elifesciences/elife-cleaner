@@ -147,6 +147,14 @@ def add_sub_article_contributor(sub_article_object, participant):
         sub_article_object.contributors.append(author)
 
 
+def add_anonymous_contributor(sub_article_object):
+    "add an anonymous contributor to a sub-article object"
+    anonymous_author = Contributor("author", None, None)
+    anonymous_author.anonymous = True
+    anonymous_author.roles = [Role("Reviewer", "referee")]
+    sub_article_object.contributors.append(anonymous_author)
+
+
 def sub_article_contributors(article_object, sub_article_object, participants=None):
     "add contributors to the sub-article from the parent article depending on the article type"
     if sub_article_object.article_type == "editor-report":
@@ -166,13 +174,15 @@ def sub_article_contributors(article_object, sub_article_object, participants=No
     if sub_article_object.article_type == "referee-report":
         if participants:
             for participant in participants:
-                add_sub_article_contributor(sub_article_object, participant)
+                # add a named participant if the actor has surname
+                if participant.get("actor") and participant.get("actor").get("surname"):
+                    add_sub_article_contributor(sub_article_object, participant)
+                else:
+                    # add an anonymous author if no surname
+                    add_anonymous_contributor(sub_article_object)
         else:
             # one anonymous author per referee-report
-            anonymous_author = Contributor("author", None, None)
-            anonymous_author.anonymous = True
-            anonymous_author.roles = [Role("Reviewer", "referee")]
-            sub_article_object.contributors.append(anonymous_author)
+            add_anonymous_contributor(sub_article_object)
     if sub_article_object.article_type == "author-comment":
         for author in article_object.contributors:
             if not author.roles:
