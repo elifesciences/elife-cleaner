@@ -1,4 +1,5 @@
 import os
+import json
 import unittest
 import zipfile
 from xml.etree import ElementTree
@@ -76,7 +77,22 @@ CONTENT_JSON = [
         "html": b"<p><strong>%s</strong></p><p>Test review article.</p>"
         % ARTICLE_TITLES[1],
         "participants": [
-            {"actor": {"name": "anonymous", "type": "person"}, "role": "peer-reviewer"}
+            {
+                "actor": {
+                    "type": "person",
+                    "id": "https://orcid.org/0000-0000-0000-0000",
+                    "name": "Revealed Identity",
+                    "firstName": "Revealed",
+                    "surname": "Identity",
+                    "_relatesToOrganization": "Memorial University, Canada",
+                    "affiliation": {
+                        "type": "organization",
+                        "name": "Memorial University",
+                        "location": "St. John's, Canada",
+                    },
+                },
+                "role": "peer-reviewer",
+            }
         ],
     },
     {
@@ -337,6 +353,41 @@ class TestSubArticleData(unittest.TestCase):
         # assertions for XML root
         self.assertIsNotNone(
             sub_article_data[0].get("xml_root").find(".//article-title")
+        )
+
+    @patch("requests.get")
+    def test_reviewer_sub_article_data(self, mock_get):
+        "test non-anonymous reviewer data"
+        article_title = b"Evaluation Summary: <italic>test</italic>"
+        mock_get.return_value = FakeResponse(
+            200, content=b"<p><strong>%s</strong></p><p>Test.</p>" % article_title
+        )
+        docmap_string = read_fixture("2021.06.02.446694.docmap.json", mode="r")
+
+        # add reviewer data to docmap_string
+        docmap_string = docmap_string.replace(
+            '{"actor":{"name":"anonymous","type":"person"},"role":"peer-reviewer"}',
+            json.dumps(CONTENT_JSON[2].get("participants")[0]),
+        )
+
+        article = Article("10.7554/eLife.79713.1")
+        # invoke
+        sub_article_data = sub_article.sub_article_data(docmap_string, article)
+        # assertions
+        self.assertEqual(len(sub_article_data), 5)
+        # assert non-anonymous reviewer
+        self.assertEqual(
+            sub_article_data[2].get("article").contributors[0].surname, "Identity"
+        )
+        self.assertEqual(
+            sub_article_data[2].get("article").contributors[0].given_name, "Revealed"
+        )
+        self.assertEqual(
+            sub_article_data[2].get("article").contributors[0].roles[0].text, "Reviewer"
+        )
+        self.assertEqual(
+            sub_article_data[2].get("article").contributors[0].roles[0].specific_use,
+            "referee",
         )
 
     @patch("requests.get")
@@ -700,6 +751,8 @@ class TestFormatContentJson(unittest.TestCase):
             article_2.contributors[0].roles[0].specific_use,
             "referee",
         )
+        self.assertEqual(article_2.contributors[0].surname, "Identity")
+        self.assertEqual(article_2.contributors[0].given_name, "Revealed")
 
         # article 3
         article_3 = sub_article_data[3].get("article")
